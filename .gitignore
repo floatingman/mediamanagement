@@ -1,0 +1,8 @@
+appdata/sonarr/logs
+appdata/sonarr/MediaCover
+appdata/lidarr/MediaCover
+appdata/radarr/MediaCover
+appdata/readarr/MediaCover
+appdata/recyclarr/logs
+**/log/**
+**/logs/**

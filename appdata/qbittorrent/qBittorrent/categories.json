@@ -1,0 +1,29 @@
+{
+    "apps": {
+        "save_path": "complete/apps"
+    },
+    "audio": {
+        "save_path": "complete/audio"
+    },
+    "books": {
+        "save_path": "complete/books"
+    },
+    "fonts": {
+        "save_path": "complete/fonts"
+    },
+    "isos": {
+        "save_path": "complete/isos"
+    },
+    "movie": {
+        "save_path": "complete/movie"
+    },
+    "music": {
+        "save_path": "complete/music"
+    },
+    "tv": {
+        "save_path": "complete/tv"
+    },
+    "video": {
+        "save_path": "complete/video"
+    }
+}

@@ -1,0 +1,111 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/recyclarr/recyclarr/master/schemas/config-schema.json
+
+# A starter config to use with Recyclarr. Most values are set to "reasonable defaults". Update the
+# values below as needed for your instance. You will be required to update the API Key and URL for
+# each instance you want to use.
+#
+# Many optional settings have been omitted to keep this template simple.
+#
+# For more details on the configuration, see the Configuration Reference on the wiki here:
+# https://github.com/recyclarr/recyclarr/wiki/Configuration-Reference
+
+# Configuration specific to Sonarr
+sonarr:
+  mainson:
+    media_naming:
+      series: plex
+      season: default
+      episodes:
+        rename: true
+        standard: default
+        daily: default
+        anime: default
+    delete_old_custom_formats: true
+    replace_existing_custom_formats: true
+  # Set the URL/API Key to your actual instance
+    base_url: !secret sonarr_hd_url
+    api_key: !secret sonarr_hd_apikey
+
+    include:
+      # Comment out any of the following includes to disable them
+      - template: sonarr-quality-definition-series
+      - template: sonarr-v4-quality-profile-web-1080p
+      - template: sonarr-v4-custom-formats-web-1080p
+# Configuration specific to Radarr.
+radarr:
+  mainrad:
+    media_naming:
+      folder: plex
+      movie:
+        rename: true
+        standard: default
+    delete_old_custom_formats: true
+    replace_existing_custom_formats: true
+  # Set the URL/API Key to your actual instance
+    base_url: !secret radarr_hd_url
+    api_key: !secret radarr_hd_apikey
+    quality_profiles:
+      - name: SQP-1 (1080p)
+        reset_unmatched_scores: 
+          enabled: true
+      # Uncomment the below line if you don't have access to top-tier indexers
+      # min_format_score: 10
+      - name: SQP-1 (2160p)
+        reset_unmatched_scores: 
+          enabled: true
+
+    include:
+      # Comment out any of the following includes to disable them
+      - template: radarr-quality-definition-sqp-streaming
+      - template: radarr-quality-profile-sqp-1-1080p
+      - template: radarr-custom-formats-sqp-1-1080p
+      - template: radarr-quality-profile-sqp-1-2160p-default
+      # - template: radarr-quality-profile-sqp-1-2160p-imax-e
+      # - template: radarr-quality-profile-sqp-1-2160p-4k-only-default
+      # - template: radarr-quality-profile-sqp-1-2160p-4k-only-imax-e
+
+      - template: radarr-custom-formats-sqp-1-2160p
+
+# Custom Formats: https://recyclarr.dev/wiki/yaml/config-reference/custom-formats/
+    custom_formats:
+      # Movie Versions
+      - trash_ids:
+      # Uncomment the next line if you prefer WEBDL with IMAX Enhanced to BHDStudio
+          # - 9f6cbff8cfe4ebbc1bde14c7b7bec0de # IMAX Enhanced
+
+      # Optional - uncomment any of the following if you want them added to your profile
+          # - b6832f586342ef70d9c128d40c07b872 # Bad Dual Groups
+          # - 90cedc1fea7ea5d11298bebd3d1d3223 # EVO (no WEBDL)
+          # - ae9b7c9ebde1f3bd336a8cbd1ec4c5e5 # No-RlsGroup
+          # - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
+          # - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
+          # - f537cf427b64c38c8e36298f657e4828 # Scene
+          # - 0a3f082873eb454bde444150b70253cc # Extras
+          # - bfd8eb01832d646a0a89c4deb46f8564 # Upscaled
+        quality_profiles:
+          - name: SQP-1 (1080p)
+      - trash_ids:
+          # Uncomment any of the following optional custom formats if you want them to be added to
+          # the quality profile
+          #   - b6832f586342ef70d9c128d40c07b872 # Bad Dual Groups
+          # Uncomment the next line if you have a setup that supports HDR10+
+          # - b17886cb4158d9fea189859409975758 # HDR10+ Boost
+          # - 90cedc1fea7ea5d11298bebd3d1d3223 # EVO (no WEBDL)
+          # - ae9b7c9ebde1f3bd336a8cbd1ec4c5e5 # No-RlsGroup
+          # - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
+          # - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
+          # - f537cf427b64c38c8e36298f657e4828 # Scene
+        quality_profiles:
+          - name: SQP-1 (2160p)
+
+      - trash_ids:
+          - 9c38ebb7384dada637be8899efa68e6f # SDR
+        quality_profiles:
+          - name: SQP-1 (2160p)
+            # score: 0 # Uncomment this line to allow SDR releases
+
+      - trash_ids:
+          - cae4ca30163749b891686f95532519bd # AV1
+        quality_profiles:
+          - name: SQP-1 (2160p)
+            # score: 0 # Uncomment this line to allow AV1 releases 

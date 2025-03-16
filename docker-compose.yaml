@@ -1,7 +1,6 @@
-version: '3'
 services:
   proxy:
-    image: traefik:v2.4             # Review traefik documentation https://doc.traefik.io/traefik/
+    image: traefik:v2.4 # Review traefik documentation https://doc.traefik.io/traefik/
     container_name: traefik
     command:
       - --api.insecure=true
@@ -23,12 +22,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
   domain:
-    image: ghcr.io/linuxserver/duckdns   # Review doc https://github.com/linuxserver/docker-duckdns
+    image: ghcr.io/linuxserver/duckdns # Review doc https://github.com/linuxserver/docker-duckdns
     container_name: duckdns
     environment:
       - TZ=America/Chicago
-      - TOKEN=59dcbfa1-b250-40c4-9f12-3dd38c8dbe74d                    # Required
-      - SUBDOMAINS=newmanson,newmantor,newmannzb,newmanrad,newmanlid       # Required
+      - TOKEN=59dcbfa1-b250-40c4-9f12-3dd38c8dbe74 # Required
+      - SUBDOMAINS=newmanson,newmantor,newmannzb,newmanrad,newmanlid # Required
       - LOG_FILE=true #optional
     volumes:
       - ./appdata/duckdns:/config
@@ -45,84 +44,108 @@ services:
       - traefik.http.services.sabnzbd.loadbalancer.server.port=8080
       - traefik.http.routers.sabnzbd.rule=Host(`newmannzb.duckdns.org`) # Replace with your domain
     volumes:
-        - ./appdata/sabnzbd:/config
-        - /mnt/downloads:/media/downloads
-        - ../downloads/nzb/incomplete:/media/incomplete-downloads
-        - ../syncs/Sync/nzb:/watch
+      - ./appdata/sabnzbd:/config
+      - /mnt/downloads:/downloads
+      - ./downloads/nzb/incomplete:/incomplete-downloads
+      - ../syncs/Sync/nzb:/watch
     restart: unless-stopped
   radarr:
     image: linuxserver/radarr
     container_name: radarr
     environment:
-        - PUID=1000
-        - PGID=1003
-        - TZ=America/Chicago
-        - UMASK=022 #optional
+      - PUID=1000
+      - PGID=1003
+      - TZ=America/Chicago
+      - UMASK=022 #optional
     labels:
       - traefik.enable=true
       - traefik.http.services.radarr.loadbalancer.server.port=7878
       - traefik.http.routers.radarr.rule=Host(`newmanrad.duckdns.org`) # Replace with your domain
     volumes:
-        - ./appdata/radarr:/config
-        - /mnt/media/Video/Movies:/media
-        - /mnt/downloads:/downloads
-        - /mnt/downloads/torrents/complete:/torrentdownloads
+      - ./appdata/radarr:/config
+      - /mnt/perceptormedia/Video/Movies:/media
+      - /mnt/truemedia/Movies/:/truemedia
+      - /mnt/downloads:/downloads
+      - /mnt/downloads/torrents/complete:/torrentdownloads
     restart: unless-stopped
   sonarr:
-    image: linuxserver/sonarr
+    image: linuxserver/sonarr:develop
     container_name: sonarr
     environment:
-        - PUID=1000
-        - PGID=1003
-        - TZ=America/Chicago
-        - UMASK=022 #optional
+      - PUID=1000
+      - PGID=1003
+      - TZ=America/Chicago
+      - UMASK=022 #optional
     labels:
       - traefik.enable=true
       - traefik.http.services.sonarr.loadbalancer.server.port=8989
       - traefik.http.routers.sonarr.rule=Host(`newmanson.duckdns.org`) # Replace with your domain
     volumes:
-        - ./appdata/sonarr:/config
-        - /mnt/media/Video/TV/:/media
-        - /mnt/downloads:/media/downloads
+      - ./appdata/sonarr:/config
+      - /mnt/perceptormedia/Video/TV/:/media
+      - /mnt/truemedia/TVShows/:/truemedia
+      - /mnt/downloads:/downloads
     restart: unless-stopped
   lidarr:
     image: linuxserver/lidarr
     container_name: lidarr
     environment:
-        - PUID=1000
-        - PGID=1003
-        - TZ=America/Chicago
-        - UMASK=022 #optional
+      - PUID=1000
+      - PGID=1003
+      - TZ=America/Chicago
+      - UMASK=022 #optional
     labels:
       - traefik.enable=true
       - traefik.http.services.lidarr.loadbalancer.server.port=8686
       - traefik.http.routers.lidarr.rule=Host(`newmanlid.duckdns.org`) # Replace with your domain
     volumes:
-        - ./appdata/lidarr:/config
-        - /mnt/media/Audio/music:/media
-        - /mnt/downloads:/media/downloads
+      - ./appdata/lidarr:/config
+      - /mnt/perceptormediaexpansion/Audio/music:/media
+      - /mnt/downloads:/downloads
+    restart: unless-stopped
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=1000
+      - PGID=1003
+      - TZ=America/Chicago
+    volumes:
+      - ./appdata/bazarr:/config
+      - /mnt/perceptormedia/Video/Movies:/Movies
+      - /mnt/perceptormedia/Video/TV:/TV
+    ports:
+      - 6767:6767
     restart: unless-stopped
   vpn:
-#    image: ghcr.io/bubuntux/nordvpn:v3.9.5-1        # Testing
-#    image: ghcr.io/bubuntux/nordvpn:latest
-    image: ghcr.io/bubuntux/nordvpn:basic_ports     # Testing
+    image: ghcr.io/bubuntux/nordlynx
     container_name: nordvpn
     cap_add:
-      - NET_ADMIN               # Required
-    environment:                # Review https://github.com/bubuntux/nordvpn#environment-variables
-      - USER=dwnewman78@gmail.com   # Required
-      - "PASS=kw4DbW32wTI3"             # Required
-      - CONNECT=--group p2p United_States
-#      - CONNECT=p2p us
-      - TECHNOLOGY=NordLynx
-      - DEBUG=Trace
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+      - NET_ADMIN # Required
+    environment: # Review https://github.com/bubuntux/nordvpn#environment-variables
+      - PRIVATE_KEY=***REMOVED***
+      - NET_LOCAL=192.168.0.0/24
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=1
+    restart: unless-stopped
+  readarr:
+    image: lscr.io/linuxserver/readarr:develop
+    container_name: readarr
+    environment:
+      - PUID=1000
+      - PGID=1003
+      - TZ=America/Chicago
+    volumes:
+      - ./appdata/readarr:/config
+      - /mnt/backups/Books/Sorted:/books #optional
+      - /mnt/downloads:/downloads #optional
+    ports:
+      - 8787:8787
     restart: unless-stopped
   torrent:
-    image: ghcr.io/linuxserver/qbittorrent
+    # image: ghcr.io/linuxserver/qbittorrent
+    image: ghcr.io/linuxserver/qbittorrent:14.3.9
     container_name: qbittorrent
     network_mode: service:vpn
     environment:
@@ -138,6 +161,15 @@ services:
       - traefik.http.routers.torrent.rule=Host(`newmantor.duckdns.org`) # Replace with your domain
     volumes:
       - ./appdata/qbittorrent:/config
-      - /mnt/downloads/torrents:/media/downloads
+      - /mnt/downloads/torrents:/downloads
       - ../syncs/Sync/torrent:/watch
     restart: unless-stopped
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr
+    container_name: recyclarr
+    init: true
+    user: 1000:1003
+    volumes:
+      - ./appdata/recyclarr:/config
+    environment:
+      - TZ=America/Chicago
