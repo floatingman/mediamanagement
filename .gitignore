@@ -117,3 +117,12 @@ appdata/sonarr/xdg/.mono/keypairs/\[1]\[98f3a7e3-0d6e-f432-8a18-e1144b53633f]\[-
 letsencrypt/
 appdata/lidarr/logs.db-shm
 appdata/lidarr/logs.db-wal
+appdata/lidarr/Sentry/
+appdata/lidarr/asp/
+appdata/lidarr/lidarr.db-shm
+appdata/lidarr/lidarr.db-wal
+appdata/qbittorrent/qBittorrent/BT_backup/
+appdata/readarr/Sentry/
+appdata/readarr/logs.db-shm
+appdata/readarr/logs.db-wal
+docker-compose.bak
