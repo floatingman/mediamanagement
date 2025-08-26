@@ -118,8 +118,8 @@ radarr:
       - name: SQP-1 WEB (1080p)
         reset_unmatched_scores:
           enabled: true
-      # Uncomment the below line if you don't have access to top-tier indexers
-      # min_format_score: 10
+        # Uncomment the below line if you don't have access to top-tier indexers
+        min_format_score: 10
       - name: SQP-1 (1080p)
         reset_unmatched_scores:
           enabled: true
