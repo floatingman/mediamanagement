@@ -13,7 +13,7 @@
 sonarr:
   mainson:
     media_naming:
-      series: plex
+      series: plex-imdb
       season: default
       episodes:
         rename: true
@@ -103,10 +103,10 @@ sonarr:
 radarr:
   mainrad:
     media_naming:
-      folder: plex
+      folder: plex-imdb
       movie:
         rename: true
-        standard: default
+        standard: plex-imdb
     delete_old_custom_formats: true
     replace_existing_custom_formats: true
     quality_definition:
