@@ -127,3 +127,5 @@ appdata/readarr/logs.db-shm
 appdata/readarr/logs.db-wal
 docker-compose.bak
 appdata/radarr/Sentry/
+appdata/radarr/logs.db-shm
+appdata/radarr/logs.db-wal
