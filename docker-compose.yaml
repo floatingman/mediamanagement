@@ -112,6 +112,8 @@ services:
       - TZ=America/Chicago
     volumes:
       - ./appdata/bazarr:/config
+      - /mnt/truemedia/Movies:/truemediamovies
+      - /mnt/truemedia/TVShows:/truemediatvshows
       - /mnt/perceptormedia/Video/Movies:/Movies
       - /mnt/perceptormedia/Video/TV:/TV
     ports:
@@ -128,20 +130,6 @@ services:
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
       - net.ipv6.conf.all.disable_ipv6=1
-    restart: unless-stopped
-  readarr:
-    image: lscr.io/linuxserver/readarr:develop
-    container_name: readarr
-    environment:
-      - PUID=1000
-      - PGID=1003
-      - TZ=America/Chicago
-    volumes:
-      - ./appdata/readarr:/config
-      - /mnt/backups/Books/Sorted:/books #optional
-      - /mnt/downloads:/downloads #optional
-    ports:
-      - 8787:8787
     restart: unless-stopped
   torrent:
     image: ghcr.io/linuxserver/qbittorrent
