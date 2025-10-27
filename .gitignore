@@ -130,3 +130,5 @@ appdata/radarr/Sentry/
 appdata/radarr/logs.db-shm
 appdata/radarr/logs.db-wal
 downloads/
+appdata/bazarr/cache_old/
+appdata/sonarr/Sentry/
