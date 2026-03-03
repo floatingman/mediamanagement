@@ -1,0 +1,35 @@
+services:
+  proxy:
+    image: traefik:v3.6 # Review traefik documentation https://doc.traefik.io/traefik/
+    container_name: traefik
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls.certresolver=letsencrypt
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.email=you@example.com
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - ../letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+  domain:
+    image: ghcr.io/linuxserver/duckdns # Review doc https://github.com/linuxserver/docker-duckdns
+    container_name: duckdns
+    environment:
+      - TZ=America/Chicago
+      - TOKEN=${DUCKDNS_TOKEN} # Required
+      - SUBDOMAINS=newmanson,newmantor,newmannzb,newmanrad,newmanlid # Required
+      - LOG_FILE=true #optional
+    volumes:
+      - ../appdata/duckdns:/config
+    restart: unless-stopped

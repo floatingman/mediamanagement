@@ -200,5 +200,6 @@ appdata/tunarr/streams/
 node_modules/
 package-lock.json
 package.json
+.env
 appdata/agregarr/posters/
 appdata/tunarr/ms-snapshots/

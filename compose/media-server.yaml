@@ -1,0 +1,103 @@
+services:
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    init: true
+    container_name: seerr
+    environment:
+      - LOG_LEVEL=debug
+      - PUID=1000
+      - PGID=1003
+      - TZ=America/Chicago
+      - PORT=5055 #optional
+    ports:
+      - 5055:5055
+    volumes:
+      - ../appdata/seerr:/app/config
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+    restart: unless-stopped
+
+  tautulli:
+    image: tautulli/tautulli
+    container_name: tautulli
+    restart: unless-stopped
+    volumes:
+      - ../appdata/tautulli:/config
+    environment:
+      - PUID=1000
+      - PGID=1003
+      - TZ=America/Chicago
+    ports:
+      - 8181:8181
+
+  agregarr:
+    image: agregarr/agregarr:latest
+    container_name: agregarr
+    volumes:
+      - ../appdata/agregarr:/app/config
+      - /mnt/perceptormedia/placeholders/movies:/data/movies
+      - /mnt/perceptormedia/placeholders/tv:/data/tv
+    environment:
+      - TZ=America/Chicago
+    ports:
+      - 7171:7171
+    restart: unless-stopped
+
+  tunarr:
+    image: chrisbenincasa/tunarr:latest
+    container_name: tunarr
+    ports:
+      - ${TUNARR_SERVER_PORT:-8000}:8000
+    # Uncomment if using the Nvidia container
+    runtime: nvidia
+    environment:
+      - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
+      # Replace this with your timezone to ensure accurate guide
+      # data and scheduling.
+      - TZ=America/Chicago
+      # Uncomment if you'd like to adjust default config path
+      # - TUNARR_DATABASE_PATH=/your/path/tunarr
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      # Choose a path on your host to map to /config/tunarr. This ensures
+      # that restarting the container will not delete your settings or DB.
+      - ../appdata/tunarr:/config/tunarr
+    restart: unless-stopped
+
+  cleanuparr:
+    image: ghcr.io/cleanuparr/cleanuparr:latest
+    container_name: cleanuparr
+    restart: unless-stopped
+    ports:
+      - "11011:11011"
+    volumes:
+      - ../appdata/cleanuparr:/config
+    environment:
+      - PORT=11011
+      - BASE_PATH=
+      - PUID=1000
+      - PGID=1003
+      - UMASK=022
+      - TZ=America/Chicago
+
+  maintainerr:
+    image: ghcr.io/maintainerr/maintainerr:latest # or jorenn92/maintainerr:latest
+    container_name: maintainerr
+    user: 1000:1003
+    volumes:
+      - type: bind
+        source: ../appdata/maintainerr
+        target: /opt/data
+    environment:
+      - TZ=America/Chicago # Set your timezone
+      #      - BASE_PATH=/maintainerr # uncomment if you're serving maintainerr from a subdirectory
+      #      - UI_HOSTNAME=:: # uncomment if you want to listen on IPv6 instead (default 0.0.0.0)
+      #      - UI_PORT=6247 # uncomment to change the UI port (default 6246)
+      - GITHUB_TOKEN=${MAINTAINERR_GITHUB_TOKEN} # Optional: GitHub Personal Access Token for higher API rate limits (60/hr without, 5000/hr with token)
+    ports:
+      - 6246:6246
+    restart: unless-stopped

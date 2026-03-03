@@ -1,0 +1,33 @@
+services:
+  mcsmanager-web:
+    image: githubyumao/mcsmanager-web:latest
+    environment:
+      - PUID=1000
+      - PGID=1003
+      - UMASK=022
+      - TZ=America/Chicago
+    ports:
+      - "23333:23333"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ../appdata/mcsmanager-web/data:/opt/mcsmanager/web/data
+      - ../appdata/mcsmanager-web/web/logs:/opt/mcsmanager/web/logs
+
+  mcsmanager-daemon:
+    image: githubyumao/mcsmanager-daemon:latest
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1003
+      - UMASK=022
+      - TZ=America/Chicago
+      - MCSM_DOCKER_WORKSPACE_PATH=./appdata/mcsmanager-daemon/daemon/data/InstanceData
+    ports:
+      - "24444:24444"
+      - "25565:25565"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ../appdata/mcsmanager-daemon/daemon/data:/opt/mcsmanager/daemon/data
+      - ../appdata/mcsmanager-daemon/daemon/logs:/opt/mcsmanager/daemon/logs
+      - /var/run/docker.sock:/var/run/docker.sock

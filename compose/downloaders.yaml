@@ -1,0 +1,53 @@
+services:
+  vpn:
+    image: ghcr.io/bubuntux/nordlynx
+    container_name: nordvpn
+    cap_add:
+      - NET_ADMIN # Required
+    environment: # Review https://github.com/bubuntux/nordvpn#environment-variables
+      - PRIVATE_KEY=${NORDVPN_PRIVATE_KEY}
+      - NET_LOCAL=192.168.0.0/24
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=1
+    restart: unless-stopped
+
+  sabnzbd:
+    image: ghcr.io/linuxserver/sabnzbd
+    container_name: sabnzbd
+    environment:
+      - PUID=1000
+      - PGID=1003
+      - TZ=America/Chicago
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.sabnzbd.loadbalancer.server.port=8080
+      - traefik.http.routers.sabnzbd.rule=Host(`newmannzb.duckdns.org`) # Replace with your domain
+    volumes:
+      - ../appdata/sabnzbd:/config
+      - /mnt/downloads:/downloads
+      - ../downloads/nzb/incomplete:/incomplete-downloads
+      - ../../syncs/Sync/nzb:/watch
+    restart: unless-stopped
+
+  torrent:
+    image: ghcr.io/linuxserver/qbittorrent
+    # image: ghcr.io/linuxserver/qbittorrent:14.3.9
+    container_name: qbittorrent
+    network_mode: service:vpn
+    environment:
+      - PUID=1000
+      - PGID=1003
+      - TZ=America/Chicago
+      - WEBUI_PORT=8181
+    depends_on:
+      - vpn
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.torrent.loadbalancer.server.port=8181
+      - traefik.http.routers.torrent.rule=Host(`newmantor.duckdns.org`) # Replace with your domain
+    volumes:
+      - ../appdata/qbittorrent:/config
+      - /mnt/downloads/torrents:/downloads
+      - ../../syncs/Sync/torrent:/watch
+    restart: unless-stopped
