@@ -10,9 +10,13 @@ services:
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.websecure.address=:443
       - --entrypoints.websecure.http.tls.certresolver=letsencrypt
-      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
       - --certificatesresolvers.letsencrypt.acme.email=you@example.com
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+    environment:
+      - CF_DNS_API_TOKEN=${CLOUDFLARE_DNS_TOKEN}
     ports:
       - 80:80
       - 443:443
@@ -23,13 +27,12 @@ services:
     restart: unless-stopped
 
   domain:
-    image: ghcr.io/linuxserver/duckdns # Review doc https://github.com/linuxserver/docker-duckdns
-    container_name: duckdns
+    image: favonia/cloudflare-ddns:latest # Review doc https://github.com/favonia/cloudflare-ddns
+    container_name: cloudflare-ddns
     environment:
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_DNS_TOKEN}
+      - DOMAINS=thenewmans.casa,*.thenewmans.casa
+      - PROXIED=false
+      - IP6_PROVIDER=none
       - TZ=America/Chicago
-      - TOKEN=${DUCKDNS_TOKEN} # Required
-      - SUBDOMAINS=newmanson,newmantor,newmannzb,newmanrad,newmanlid # Required
-      - LOG_FILE=true #optional
-    volumes:
-      - ../appdata/duckdns:/config
     restart: unless-stopped

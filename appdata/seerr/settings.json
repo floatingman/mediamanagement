@@ -39,14 +39,14 @@
     "name": "Movies",
     "enabled": true,
     "type": "movie",
-    "lastScan": 1772550900029
+    "lastScan": 1772555100024
    },
    {
     "id": "2",
     "name": "TV Shows",
     "enabled": true,
     "type": "show",
-    "lastScan": 1772550900151
+    "lastScan": 1772555100069
    },
    {
     "id": "5",
@@ -82,7 +82,7 @@
  "radarr": [
   {
    "name": "newmanrad",
-   "hostname": "newmanrad.duckdns.org",
+   "hostname": "radarr.thenewmans.casa",
    "port": 443,
    "apiKey": "1d284f0ecbf54dfab53ef767a126e3e1",
    "useSsl": true,
@@ -102,7 +102,7 @@
  "sonarr": [
   {
    "name": "newmanson",
-   "hostname": "newmanson.duckdns.org",
+   "hostname": "sonarr.thenewmans.casa",
    "port": 443,
    "apiKey": "0290586e70194c908118a9afbc1f5fdb",
    "useSsl": true,

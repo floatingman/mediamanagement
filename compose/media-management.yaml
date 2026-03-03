@@ -10,7 +10,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.services.radarr.loadbalancer.server.port=7878
-      - traefik.http.routers.radarr.rule=Host(`newmanrad.duckdns.org`) # Replace with your domain
+      - traefik.http.routers.radarr.rule=Host(`radarr.thenewmans.casa`)
     volumes:
       - ../appdata/radarr:/config
       - /mnt/perceptormedia/Video/Movies:/media
@@ -30,7 +30,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.services.sonarr.loadbalancer.server.port=8989
-      - traefik.http.routers.sonarr.rule=Host(`newmanson.duckdns.org`) # Replace with your domain
+      - traefik.http.routers.sonarr.rule=Host(`sonarr.thenewmans.casa`)
     volumes:
       - ../appdata/sonarr:/config
       - /mnt/perceptormedia/Video/TV/:/media
@@ -49,7 +49,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.services.lidarr.loadbalancer.server.port=8686
-      - traefik.http.routers.lidarr.rule=Host(`newmanlid.duckdns.org`) # Replace with your domain
+      - traefik.http.routers.lidarr.rule=Host(`lidarr.thenewmans.casa`)
     volumes:
       - ../appdata/lidarr:/config
       - /mnt/perceptormediaexpansion/Audio/music:/media
