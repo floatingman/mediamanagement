@@ -201,3 +201,4 @@ package.json
 .env
 appdata/agregarr/posters/
 appdata/tunarr/ms-snapshots/
+appdata/cleanuparr/plex-client-id.txt
