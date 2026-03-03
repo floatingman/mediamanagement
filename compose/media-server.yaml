@@ -9,6 +9,10 @@ services:
       - PGID=1003
       - TZ=America/Chicago
       - PORT=5055 #optional
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.seerr.loadbalancer.server.port=5055
+      - traefik.http.routers.seerr.rule=Host(`seerr.thenewmans.casa`)
     ports:
       - 5055:5055
     volumes:
@@ -31,6 +35,10 @@ services:
       - PUID=1000
       - PGID=1003
       - TZ=America/Chicago
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.tautulli.loadbalancer.server.port=8181
+      - traefik.http.routers.tautulli.rule=Host(`tautulli.thenewmans.casa`)
     ports:
       - 8181:8181
 
@@ -43,6 +51,10 @@ services:
       - /mnt/perceptormedia/placeholders/tv:/data/tv
     environment:
       - TZ=America/Chicago
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.agregarr.loadbalancer.server.port=7171
+      - traefik.http.routers.agregarr.rule=Host(`agregarr.thenewmans.casa`)
     ports:
       - 7171:7171
     restart: unless-stopped
@@ -62,6 +74,10 @@ services:
       # Uncomment if you'd like to adjust default config path
       # - TUNARR_DATABASE_PATH=/your/path/tunarr
       - NVIDIA_VISIBLE_DEVICES=all
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.tunarr.loadbalancer.server.port=8000
+      - traefik.http.routers.tunarr.rule=Host(`tunarr.thenewmans.casa`)
     volumes:
       # Choose a path on your host to map to /config/tunarr. This ensures
       # that restarting the container will not delete your settings or DB.
@@ -83,6 +99,10 @@ services:
       - PGID=1003
       - UMASK=022
       - TZ=America/Chicago
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.cleanuparr.loadbalancer.server.port=11011
+      - traefik.http.routers.cleanuparr.rule=Host(`cleanuparr.thenewmans.casa`)
 
   maintainerr:
     image: ghcr.io/maintainerr/maintainerr:latest # or jorenn92/maintainerr:latest
@@ -98,6 +118,10 @@ services:
       #      - UI_HOSTNAME=:: # uncomment if you want to listen on IPv6 instead (default 0.0.0.0)
       #      - UI_PORT=6247 # uncomment to change the UI port (default 6246)
       - GITHUB_TOKEN=${MAINTAINERR_GITHUB_TOKEN} # Optional: GitHub Personal Access Token for higher API rate limits (60/hr without, 5000/hr with token)
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.maintainerr.loadbalancer.server.port=6246
+      - traefik.http.routers.maintainerr.rule=Host(`maintainerr.thenewmans.casa`)
     ports:
       - 6246:6246
     restart: unless-stopped

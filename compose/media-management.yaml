@@ -63,6 +63,10 @@ services:
       - PUID=1000
       - PGID=1003
       - TZ=America/Chicago
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.bazarr.loadbalancer.server.port=6767
+      - traefik.http.routers.bazarr.rule=Host(`bazarr.thenewmans.casa`)
     volumes:
       - ../appdata/bazarr:/config
       - /mnt/ratchetmedia/Movies:/ratchetmediamovies
@@ -86,6 +90,10 @@ services:
   profilarr:
     image: santiagosayshey/profilarr:beta # Use :beta for early access to new features
     container_name: profilarr
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.profilarr.loadbalancer.server.port=6868
+      - traefik.http.routers.profilarr.rule=Host(`profilarr.thenewmans.casa`)
     ports:
       - 6868:6868
     volumes:

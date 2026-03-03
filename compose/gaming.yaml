@@ -6,6 +6,10 @@ services:
       - PGID=1003
       - UMASK=022
       - TZ=America/Chicago
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.mcsmanager.loadbalancer.server.port=23333
+      - traefik.http.routers.mcsmanager.rule=Host(`minecraft.thenewmans.casa`)
     ports:
       - "23333:23333"
     volumes:

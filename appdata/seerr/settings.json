@@ -39,14 +39,14 @@
     "name": "Movies",
     "enabled": true,
     "type": "movie",
-    "lastScan": 1772555100024
+    "lastScan": 1772557200026
    },
    {
     "id": "2",
     "name": "TV Shows",
     "enabled": true,
     "type": "show",
-    "lastScan": 1772555100069
+    "lastScan": 1772557200081
    },
    {
     "id": "5",
@@ -81,11 +81,12 @@
  },
  "radarr": [
   {
-   "name": "newmanrad",
+   "name": "radarr",
    "hostname": "radarr.thenewmans.casa",
    "port": 443,
    "apiKey": "1d284f0ecbf54dfab53ef767a126e3e1",
    "useSsl": true,
+   "baseUrl": "",
    "activeProfileId": 20,
    "activeProfileName": "1080p Balanced",
    "activeDirectory": "/media",
@@ -101,11 +102,12 @@
  ],
  "sonarr": [
   {
-   "name": "newmanson",
+   "name": "sonarr",
    "hostname": "sonarr.thenewmans.casa",
    "port": 443,
    "apiKey": "0290586e70194c908118a9afbc1f5fdb",
    "useSsl": true,
+   "baseUrl": "",
    "activeProfileId": 12,
    "activeLanguageProfileId": 1,
    "activeProfileName": "1080p Balanced",

@@ -17,7 +17,7 @@
   "overseerrLabelsApplied": false,
   "syncCounter": 337,
   "lastGlobalSyncAt": "2026-03-03T06:16:05.724Z",
-  "lastCollectionsQuickSyncAt": "2026-03-03T15:30:00.070Z",
+  "lastCollectionsQuickSyncAt": "2026-03-03T17:00:00.046Z",
   "externalApplicationTitle": "Seerr",
   "placeholderMovieRootFolders": {
    "1": "/data/movies",
@@ -12636,17 +12636,22 @@
   "machineId": "117f790ccc5b5711f357ef9f537d3a04284387d7"
  },
  "tautulli": {
-  "hostname": "192.168.0.9",
-  "port": 8181,
+  "hostname": "tautulli.thenewmans.casa",
+  "port": 443,
   "apiKey": "f4bd739cbd434a2a81da677ea213a7a8",
-  "useSsl": false
+  "useSsl": true
  },
- "maintainerr": {},
+ "maintainerr": {
+  "hostname": "maintainerr.thenewmans.casa",
+  "port": 443,
+  "apiKey": "TWFpbnRhaW5lcnIxNzcyNTU2Njc1Mzg4NDExNGY2MzQtMzAzYi00YjRmLTgxYjAtMWMxMDNmMThkZDJiKQ",
+  "useSsl": true
+ },
  "overseerr": {
-  "hostname": "192.168.0.9",
-  "port": 5055,
+  "hostname": "seerr.thenewmans.casa",
+  "port": 443,
   "apiKey": "MTc2ODI1OTc5MzQzMDZhZTY5YmQ0LTc0NTQtNDA1MC1iYjdkLWY4YTdhYmJjNTExYg==",
-  "useSsl": false,
+  "useSsl": true,
   "radarrServerId": 0,
   "radarrProfileId": 20,
   "radarrRootFolder": "/media",
@@ -12674,15 +12679,14 @@
  },
  "radarr": [
   {
-   "name": "newmanrad",
-   "hostname": "newmanrad.duckdns.org",
+   "name": "radarr",
+   "hostname": "radarr.thenewmans.casa",
    "port": 443,
    "apiKey": "1d284f0ecbf54dfab53ef767a126e3e1",
    "useSsl": true,
-   "baseUrl": "",
    "activeProfileId": 20,
    "activeProfileName": "1080p Balanced",
-   "activeDirectory": "/media",
+   "activeDirectory": "/ratchetmedia",
    "minimumAvailability": "released",
    "tags": [],
    "isDefault": true,
@@ -12697,8 +12701,8 @@
  ],
  "sonarr": [
   {
-   "name": "newmanson",
-   "hostname": "newmanson.duckdns.org",
+   "name": "sonarr",
+   "hostname": "sonarr.thenewmans.casa",
    "port": 443,
    "apiKey": "0290586e70194c908118a9afbc1f5fdb",
    "useSsl": true,
