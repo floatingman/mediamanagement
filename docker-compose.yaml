@@ -1,5 +1,6 @@
 include:
   - compose/infrastructure.yaml
+  - compose/auth.yaml
   - compose/downloaders.yaml
   - compose/media-management.yaml
   - compose/media-server.yaml

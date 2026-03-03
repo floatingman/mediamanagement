@@ -17,6 +17,9 @@ appdata/bazarr/db/bazarr.db
 appdata/bazarr/db/bazarr.db-shm
 appdata/bazarr/db/bazarr.db-wal
 appdata/cloudflare-ddns/
+appdata/authelia/db.sqlite3
+appdata/authelia/notification.txt
+appdata/authelia/users_database.yml
 appdata/jacket/Jackett/log.txt
 appdata/jacket/Jackett/updater.txt
 appdata/jacket/Jackett/updater.txt.20210424.00000.txt
@@ -202,3 +205,4 @@ package.json
 appdata/agregarr/posters/
 appdata/tunarr/ms-snapshots/
 appdata/cleanuparr/plex-client-id.txt
+appdata/agregarr/tmdb-poster-cache/

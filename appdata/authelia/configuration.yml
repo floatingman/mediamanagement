@@ -1,0 +1,46 @@
+server:
+  address: 'tcp://:9091'
+
+log:
+  level: 'info'
+
+theme: 'light'
+
+authentication_backend:
+  file:
+    path: '/config/users_database.yml'
+
+access_control:
+  default_policy: 'deny'
+  rules:
+    # Authelia itself is always accessible
+    - domain: 'auth.thenewmans.casa'
+      policy: 'bypass'
+    # All other protected services require one-factor login
+    - domain: '*.thenewmans.casa'
+      policy: 'one_factor'
+
+session:
+  secret: '${AUTHELIA_SESSION_SECRET}'
+  cookies:
+    - name: 'authelia_session'
+      domain: 'thenewmans.casa'
+      authelia_url: 'https://auth.thenewmans.casa'
+      expiration: '12h'
+      inactivity: '45m'
+
+regulation:
+  max_retries: 3
+  find_time: '2m'
+  ban_time: '5m'
+
+storage:
+  encryption_key: '${AUTHELIA_STORAGE_ENCRYPTION_KEY}'
+  local:
+    path: '/config/db.sqlite3'
+
+notifier:
+  # Writes password reset notifications to a file since no SMTP is configured.
+  # Check /config/notification.txt if you ever need to reset your password.
+  filesystem:
+    filename: '/config/notification.txt'

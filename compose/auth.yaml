@@ -1,0 +1,20 @@
+services:
+  authelia:
+    image: authelia/authelia:latest # Review doc https://www.authelia.com/
+    container_name: authelia
+    environment:
+      - TZ=America/Chicago
+      - AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET=${AUTHELIA_JWT_SECRET}
+      - AUTHELIA_SESSION_SECRET=${AUTHELIA_SESSION_SECRET}
+      - AUTHELIA_STORAGE_ENCRYPTION_KEY=${AUTHELIA_STORAGE_ENCRYPTION_KEY}
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.authelia.loadbalancer.server.port=9091
+      - traefik.http.routers.authelia.rule=Host(`auth.thenewmans.casa`)
+      # ForwardAuth middleware — add to any service that needs a login gate
+      - traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/authz/forward-auth
+      - traefik.http.middlewares.authelia.forwardauth.trustforwardheader=true
+      - traefik.http.middlewares.authelia.forwardauth.authresponseheaders=Remote-User,Remote-Groups,Remote-Name,Remote-Email
+    volumes:
+      - ../appdata/authelia:/config
+    restart: unless-stopped
