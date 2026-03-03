@@ -1,0 +1,73 @@
+{
+    "nickname": "big butte linux",
+    "startCommand": "sh ./run.sh",
+    "stopCommand": "stop",
+    "cwd": "/opt/mcsmanager/daemon/data/InstanceData/2f450d1b55354d5eaabf3c2b40dd5fa2",
+    "ie": "utf-8",
+    "oe": "utf-8",
+    "createDatetime": 1771467359718,
+    "lastDatetime": 1771468157269,
+    "type": "minecraft/java/forge",
+    "tag": [],
+    "endTime": 0,
+    "fileCode": "utf8",
+    "processType": "general",
+    "updateCommand": "java -jar forge-1.21.11-61.0.3-installer.jar --installServer",
+    "runAs": "",
+    "crlf": 1,
+    "category": 0,
+    "basePort": 10025,
+    "enableRcon": false,
+    "rconPassword": "",
+    "rconPort": 0,
+    "rconIp": "",
+    "actionCommandList": [],
+    "terminalOption": {
+        "haveColor": false,
+        "pty": true,
+        "ptyWindowCol": 164,
+        "ptyWindowRow": 40
+    },
+    "eventTask": {
+        "autoStart": false,
+        "autoRestart": false,
+        "autoRestartMaxTimes": -1,
+        "ignore": true
+    },
+    "java": {
+        "id": ""
+    },
+    "docker": {
+        "containerName": "",
+        "image": "",
+        "ports": [],
+        "extraVolumes": [],
+        "capAdd": [],
+        "capDrop": [],
+        "devices": [],
+        "privileged": false,
+        "memory": 0,
+        "memorySwap": null,
+        "memorySwappiness": null,
+        "networkMode": "bridge",
+        "networkAliases": [],
+        "cpusetCpus": "",
+        "cpuUsage": 0,
+        "maxSpace": 0,
+        "io": 0,
+        "network": 0,
+        "workingDir": "/workspace/",
+        "env": [],
+        "changeWorkdir": true,
+        "labels": []
+    },
+    "pingConfig": {
+        "ip": "",
+        "port": 25565,
+        "type": 1
+    },
+    "extraServiceConfig": {
+        "openFrpTunnelId": "",
+        "openFrpToken": ""
+    }
+}
