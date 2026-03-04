@@ -206,3 +206,6 @@ appdata/agregarr/posters/
 appdata/tunarr/ms-snapshots/
 appdata/cleanuparr/plex-client-id.txt
 appdata/agregarr/tmdb-poster-cache/
+appdata/agregarr/settings.json
+appdata/seerr/settings.json
+appdata/tunarr/xmltv.xml
