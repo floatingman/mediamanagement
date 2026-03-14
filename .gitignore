@@ -209,3 +209,13 @@ appdata/agregarr/tmdb-poster-cache/
 appdata/agregarr/settings.json
 appdata/seerr/settings.json
 appdata/tunarr/xmltv.xml
+appdata/sonarr/logs.db-shm
+appdata/sonarr/logs.db-wal
+appdata/audiobookshelf/data/tmp
+appdata/audiobookshelf/data/items
+appdata/audiobookshelf/data/cache
+appdata/audiobookshelf/config/migrations
+*.db-shm
+*.db-wal
+*.bak
+*.sqlite
