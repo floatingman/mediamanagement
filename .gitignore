@@ -215,6 +215,9 @@ appdata/audiobookshelf/data/tmp
 appdata/audiobookshelf/data/items
 appdata/audiobookshelf/data/cache
 appdata/audiobookshelf/config/migrations
+appdata/linkwarden/pgdata/
+appdata/linkwarden/data/
+appdata/linkwarden/meili_data/
 *.db-shm
 *.db-wal
 *.bak

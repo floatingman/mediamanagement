@@ -5,3 +5,4 @@ include:
   - compose/media-management.yaml
   - compose/media-server.yaml
   - compose/gaming.yaml
+  - compose/bookmarks.yaml
