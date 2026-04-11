@@ -6,3 +6,4 @@ include:
   - compose/media-server.yaml
   - compose/gaming.yaml
   - compose/bookmarks.yaml
+  - compose/ai.yaml
