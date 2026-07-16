@@ -143,14 +143,8 @@ appdata/agregarr/random-lists/letterboxd.txt
 appdata/agregarr/random-lists/tmdb.txt
 appdata/agregarr/random-lists/trakt.txt
 appdata/agregarr/youtube-cookies.txt
-appdata/cleanuparr/DataProtection-Keys/key-7f2d5ea0-3778-4bc2-8de6-e0a44d0f66e2.xml
-appdata/cleanuparr/cleanuparr.db
-appdata/cleanuparr/cleanuparr.db-shm
-appdata/cleanuparr/cleanuparr.db-wal
-appdata/cleanuparr/events.db
-appdata/cleanuparr/jwt-key.bin
-appdata/cleanuparr/users.db
-appdata/maintainerr/maintainerr.sqlite
+appdata/cleanuparr/
+appdata/maintainerr/
 appdata/mcsmanager-daemon/daemon/data/InstanceData/
 appdata/mcsmanager-daemon/daemon/data/InstanceLog/
 appdata/mcsmanager-web/data/RemoteServiceConfig/e73a7e09fab54f469568a85c2f9b1bb5.json
@@ -204,7 +198,6 @@ package.json
 .env
 appdata/agregarr/posters/
 appdata/tunarr/ms-snapshots/
-appdata/cleanuparr/plex-client-id.txt
 appdata/agregarr/tmdb-poster-cache/
 appdata/agregarr/settings.json
 appdata/seerr/settings.json
