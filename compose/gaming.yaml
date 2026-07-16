@@ -2,10 +2,10 @@ services:
   mcsmanager-web:
     image: githubyumao/mcsmanager-web:latest
     environment:
-      - PUID=1000
-      - PGID=1003
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
       - UMASK=022
-      - TZ=America/Chicago
+      - TZ=${TZ:-America/Chicago}
     labels:
       - traefik.enable=true
       - traefik.http.services.mcsmanager.loadbalancer.server.port=23333
@@ -21,10 +21,10 @@ services:
     image: githubyumao/mcsmanager-daemon:latest
     restart: unless-stopped
     environment:
-      - PUID=1000
-      - PGID=1003
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
       - UMASK=022
-      - TZ=America/Chicago
+      - TZ=${TZ:-America/Chicago}
       - MCSM_DOCKER_WORKSPACE_PATH=./appdata/mcsmanager-daemon/daemon/data/InstanceData
     ports:
       - "24444:24444"

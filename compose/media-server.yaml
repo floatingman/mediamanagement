@@ -23,7 +23,7 @@ services:
       # Override via PLEX_PUID / PLEX_PGID in .env (defaults match this server).
       - PUID=${PLEX_PUID:-999}
       - PGID=${PLEX_PGID:-996}
-      - TZ=America/Chicago
+      - TZ=${TZ:-America/Chicago}
       - NVIDIA_VISIBLE_DEVICES=all
       # REQUIRED for NVENC hardware transcoding: the `runtime: nvidia` default
       # only injects compute+utility. `video` exposes the NVENC/NVDEC codec
@@ -64,9 +64,9 @@ services:
     container_name: seerr
     environment:
       - LOG_LEVEL=debug
-      - PUID=1000
-      - PGID=1003
-      - TZ=America/Chicago
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
+      - TZ=${TZ:-America/Chicago}
       - PORT=5055 #optional
     labels:
       - traefik.enable=true
@@ -91,9 +91,9 @@ services:
     volumes:
       - ../appdata/tautulli:/config
     environment:
-      - PUID=1000
-      - PGID=1003
-      - TZ=America/Chicago
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
+      - TZ=${TZ:-America/Chicago}
     labels:
       - traefik.enable=true
       - traefik.http.services.tautulli.loadbalancer.server.port=8181
@@ -109,7 +109,7 @@ services:
       - /mnt/perceptormedia/placeholders/movies:/data/movies
       - /mnt/perceptormedia/placeholders/tv:/data/tv
     environment:
-      - TZ=America/Chicago
+      - TZ=${TZ:-America/Chicago}
     labels:
       - traefik.enable=true
       - traefik.http.services.agregarr.loadbalancer.server.port=7171
@@ -129,7 +129,7 @@ services:
       - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
       # Replace this with your timezone to ensure accurate guide
       # data and scheduling.
-      - TZ=America/Chicago
+      - TZ=${TZ:-America/Chicago}
       # Uncomment if you'd like to adjust default config path
       # - TUNARR_DATABASE_PATH=/your/path/tunarr
       - NVIDIA_VISIBLE_DEVICES=all
@@ -155,10 +155,10 @@ services:
     environment:
       - PORT=11011
       - BASE_PATH=
-      - PUID=1000
-      - PGID=1003
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
       - UMASK=022
-      - TZ=America/Chicago
+      - TZ=${TZ:-America/Chicago}
     labels:
       - traefik.enable=true
       - traefik.http.services.cleanuparr.loadbalancer.server.port=11011
@@ -167,13 +167,13 @@ services:
   maintainerr:
     image: ghcr.io/maintainerr/maintainerr:latest # or jorenn92/maintainerr:latest
     container_name: maintainerr
-    user: 1000:1003
+    user: "${PUID:-1000}:${PGID:-1003}"
     volumes:
       - type: bind
         source: ../appdata/maintainerr
         target: /opt/data
     environment:
-      - TZ=America/Chicago # Set your timezone
+      - TZ=${TZ:-America/Chicago} # Set your timezone
       #      - BASE_PATH=/maintainerr # uncomment if you're serving maintainerr from a subdirectory
       #      - UI_HOSTNAME=:: # uncomment if you want to listen on IPv6 instead (default 0.0.0.0)
       #      - UI_PORT=6247 # uncomment to change the UI port (default 6246)
@@ -190,7 +190,7 @@ services:
     image: ghcr.io/advplyr/audiobookshelf:latest
     container_name: audiobookshelf
     restart: unless-stopped
-    user: 1000:1003
+    user: "${PUID:-1000}:${PGID:-1003}"
     ports:
       - 13378:80
     volumes:
@@ -199,7 +199,7 @@ services:
       - ../appdata/audiobookshelf/config:/config
       - ../appdata/audiobookshelf/data:/metadata
     environment:
-      - TZ=America/Chicago
+      - TZ=${TZ:-America/Chicago}
     labels:
       - traefik.enable=true
       - traefik.http.services.audiobookshelf.loadbalancer.server.port=80

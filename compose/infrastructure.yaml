@@ -34,5 +34,5 @@ services:
       - DOMAINS=thenewmans.casa,*.thenewmans.casa
       - PROXIED=false
       - IP6_PROVIDER=none
-      - TZ=America/Chicago
+      - TZ=${TZ:-America/Chicago}
     restart: unless-stopped

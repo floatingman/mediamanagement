@@ -29,9 +29,9 @@ same paths. Only the orchestration, configs, databases, and Plex state travel.
 Answer these up front; they determine several steps below.
 
 1. **New LAN subnet the same?** This stack is currently on `192.168.0.0/24`.
-   The VPN service hardcodes `NET_LOCAL=192.168.0.0/24` (lets LAN hosts reach
+   The VPN service reads `LAN_SUBNET` from `.env` (lets LAN hosts reach
    qBittorrent through the tunnel). If the new LAN differs (e.g. `10.0.0.0/24`),
-   you **must** edit `compose/downloaders.yaml`. See [§7 Network gotchas](#7-network--ip-gotchas).
+   set `LAN_SUBNET` in `.env`. See [§7 Network gotchas](#7-network--ip-gotchas).
 2. **Do the NAS boxes keep their IPs?** `192.168.0.5` and `192.168.0.6` are in
    `/etc/fstab`. If they move, update the new server's fstab.
 3. **Does the new server have an NVIDIA GPU?** Plex, Tunarr, and Ollama use
@@ -139,9 +139,15 @@ scp OLDSRV:~/mediamanagement/appdata/authelia/users_database.yml \
 
 ### 3.3 Edit `.env` for the new server
 ```bash
-# Confirm/adjust Plex paths + ownership (defaults match the original server):
+# Server-specific deployment settings (NOT secret) — set for the new host:
+TZ=America/Chicago
+PUID=1000                 # account that owns appdata + media on the new host
+PGID=1003
+LAN_SUBNET=192.168.0.0/24 # new LAN subnet, e.g. 10.0.0.0/24 (VPN uses this)
+
+# Plex paths + ownership (defaults match the original server):
 PLEX_DATA_PATH=/var/lib/plexmediaserver
-PLEX_PUID=1000        # change to whatever owns the data on the new box
+PLEX_PUID=1000            # change to whatever owns the data on the new box
 PLEX_PGID=1003
 # All other secrets (Cloudflare, NordVPN, Authelia, Linkwarden, Maintainerr)
 # carry over unchanged — they're account-bound, not server-bound.
@@ -260,12 +266,12 @@ These are easy to miss and will silently break things:
 
 | Gotcha | File | Fix |
 |--------|------|-----|
-| **VPN local-network bypass** | `compose/downloaders.yaml` → `NET_LOCAL=192.168.0.0/24` | Change to the new LAN subnet (e.g. `10.0.0.0/24`). This lets LAN clients reach qBittorrent's WebUI through the VPN. Wrong value = qbittorrent unreachable on LAN. |
+| **VPN local-network bypass** | `.env` → `LAN_SUBNET=192.168.0.0/24` (wired to the VPN's `NET_LOCAL`) | Change to the new LAN subnet (e.g. `10.0.0.0/24`). Lets LAN clients reach qBittorrent's WebUI through the VPN. Wrong value = qbittorrent unreachable on LAN. |
 | **NAS share IPs** | `/etc/fstab` | `//192.168.0.5` + `//192.168.0.6` — update if the NAS moved. |
 | **Plex host networking** | `compose/media-server.yaml` | Plex uses `network_mode: host`, so it binds the host's `32400` directly. On the new host, ensure `32400/tcp` is free and firewalled appropriately. Remote access needs UPnP on the new router or a manual port forward. |
 | **qBittorrent via VPN** | `compose/downloaders.yaml` | `torrent` uses `network_mode: service:vpn` — it shares the VPN container's network namespace. Both must come up together (already wired via `depends_on`). |
 | **MCSManager needs Docker** | `compose/gaming.yaml` | `mcsmanager-daemon` mounts `/var/run/docker.sock` to launch game servers. Works as-is on the new host. |
-| **Media ownership** | `/etc/fstab` + `.env` | CIFS mounts with `uid/gid`; containers run `PUID=1000/PGID=1003` (Plex `999/996`). Keep these consistent. |
+| **Media ownership** | `/etc/fstab` + `.env` | CIFS mounts with `uid/gid`; containers run `PUID`/`PGID` (default `1000`/`1003`; Plex `PLEX_PUID`/`PLEX_PGID` `999`/`996`). Keep these consistent. |
 
 ---
 

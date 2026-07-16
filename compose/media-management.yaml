@@ -3,9 +3,9 @@ services:
     image: linuxserver/radarr
     container_name: radarr
     environment:
-      - PUID=1000
-      - PGID=1003
-      - TZ=America/Chicago
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
+      - TZ=${TZ:-America/Chicago}
       - UMASK=022 #optional
     labels:
       - traefik.enable=true
@@ -23,9 +23,9 @@ services:
     image: linuxserver/sonarr:develop
     container_name: sonarr
     environment:
-      - PUID=1000
-      - PGID=1003
-      - TZ=America/Chicago
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
+      - TZ=${TZ:-America/Chicago}
       - UMASK=022 #optional
     labels:
       - traefik.enable=true
@@ -42,9 +42,9 @@ services:
     image: linuxserver/lidarr
     container_name: lidarr
     environment:
-      - PUID=1000
-      - PGID=1003
-      - TZ=America/Chicago
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
+      - TZ=${TZ:-America/Chicago}
       - UMASK=022 #optional
     labels:
       - traefik.enable=true
@@ -60,9 +60,9 @@ services:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
     environment:
-      - PUID=1000
-      - PGID=1003
-      - TZ=America/Chicago
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
+      - TZ=${TZ:-America/Chicago}
     labels:
       - traefik.enable=true
       - traefik.http.services.bazarr.loadbalancer.server.port=6767
@@ -81,11 +81,11 @@ services:
     image: ghcr.io/recyclarr/recyclarr
     container_name: recyclarr
     init: true
-    user: 1000:1003
+    user: "${PUID:-1000}:${PGID:-1003}"
     volumes:
       - ../appdata/recyclarr:/config
     environment:
-      - TZ=America/Chicago
+      - TZ=${TZ:-America/Chicago}
 
   profilarr:
     image: santiagosayshey/profilarr:beta # Use :beta for early access to new features
@@ -99,5 +99,5 @@ services:
     volumes:
       - ../appdata/profilarr:/config # Replace with your actual path
     environment:
-      - TZ=America/Chicago # Set your timezone
+      - TZ=${TZ:-America/Chicago} # Set your timezone
     restart: unless-stopped
