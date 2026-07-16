@@ -13,7 +13,7 @@ services:
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
-      - --certificatesresolvers.letsencrypt.acme.email=you@example.com
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-you@example.com}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
     environment:
       - CF_DNS_API_TOKEN=${CLOUDFLARE_DNS_TOKEN}
