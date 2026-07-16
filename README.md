@@ -2,6 +2,10 @@
 
 Docker Compose-based home media automation stack for the Newman household.
 
+> **Moving to a new server?** See [`MIGRATION.md`](MIGRATION.md) for the complete
+> relocation runbook (data inventory, NAS re-mounting, per-service gotchas,
+> cutover/rollback).
+
 ## Services
 
 | Service | URL | Purpose |

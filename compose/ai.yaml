@@ -5,6 +5,10 @@ services:
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
+      - OLLAMA_HOST=0.0.0.0:11434   # listen on all interfaces
+      - OLLAMA_KEEP_ALIVE=24h       # keep model resident in VRAM (use -1 to never unload)
     volumes:
       - ../appdata/ollama:/root/.ollama
+    ports:
+      - "11434:11434"               # publish to host so LAN clients can reach it
     restart: unless-stopped
