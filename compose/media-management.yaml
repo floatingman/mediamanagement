@@ -101,3 +101,19 @@ services:
     environment:
       - TZ=${TZ:-America/Chicago} # Set your timezone
     restart: unless-stopped
+
+  titlecardmaker:
+    image: ghcr.io/titlecardmaker/titlecardmaker-webui:latest
+    container_name: titlecardmaker
+    environment:
+      - TZ=${TZ:-America/Chicago}
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.titlecardmaker.loadbalancer.server.port=4242
+      - traefik.http.routers.titlecardmaker.rule=Host(`titlecardmaker.thenewmans.casa`)
+    volumes:
+      - ../appdata/titlecardmaker:/config
+      # TV libraries — aliases mirror Sonarr so episode paths line up with no path mapping:
+      - /mnt/perceptormedia/Video/TV:/media
+      - /mnt/ratchetmedia/TVShows:/ratchetmedia
+    restart: unless-stopped
