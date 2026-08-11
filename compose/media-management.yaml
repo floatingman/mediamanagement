@@ -78,7 +78,7 @@ services:
     restart: unless-stopped
 
   recyclarr:
-    image: ghcr.io/recyclarr/recyclarr
+    image: ghcr.io/recyclarr/recyclarr:7.4.0
     container_name: recyclarr
     init: true
     user: "${PUID:-1000}:${PGID:-1003}"

@@ -1,15 +1,26 @@
 services:
   vpn:
-    image: ghcr.io/bubuntux/nordlynx
-    container_name: nordvpn
+    image: qmcgaw/gluetun
+    container_name: gluetun
     cap_add:
-      - NET_ADMIN # Required
-    environment: # Review https://github.com/bubuntux/nordvpn#environment-variables
-      - PRIVATE_KEY=${NORDVPN_PRIVATE_KEY}
-      - NET_LOCAL=${LAN_SUBNET:-192.168.0.0/24}
-    sysctls:
-      - net.ipv4.conf.all.src_valid_mark=1
-      - net.ipv6.conf.all.disable_ipv6=1
+      - NET_ADMIN
+    # kernelspace WireGuard uses the in-kernel driver over netlink and does NOT
+    # require /dev/net/tun — so no `devices:` mapping is needed. This avoids the
+    # Proxmox LXC TUN-passthrough requirement entirely.
+    volumes:
+      - ../appdata/gluetun:/gluetun
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+      - WIREGUARD_IMPLEMENTATION=kernelspace
+      - WIREGUARD_PRIVATE_KEY=${PROTONVPN_WIREGUARD_PRIVATE_KEY}
+      # ProtonVPN server selection — all SERVER_* filters are ANDed.
+      - SERVER_CITIES=Chicago
+      # Port forwarding via NAT-PMP. You MUST enable "NAT-PMP (Port Forwarding)"
+      # when generating your WireGuard config at:
+      # https://account.proton.me/u/0/vpn/WireGuard
+      - VPN_PORT_FORWARDING=on
+      - VPN_PORT_FORWARDING_PROVIDER=protonvpn
     restart: unless-stopped
 
   sabnzbd:
@@ -40,6 +51,11 @@ services:
       - PGID=${PGID:-1003}
       - TZ=${TZ:-America/Chicago}
       - WEBUI_PORT=8181
+      # GSP mod: auto-syncs gluetun's forwarded port to qBittorrent's listen port.
+      # Requires qBittorrent "Bypass auth for clients on localhost" (WebUI setting)
+      # and the apikey in appdata/gluetun/auth/config.toml matching GLUETUN_API_KEY.
+      - DOCKER_MODS=ghcr.io/t-anc/gsp-qbittorent-gluetun-sync-port-mod:main
+      - GSP_GTN_API_KEY=${GLUETUN_API_KEY}
     depends_on:
       - vpn
     labels:

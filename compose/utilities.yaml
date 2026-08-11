@@ -1,0 +1,19 @@
+services:
+  covertx:
+    image: ghcr.io/c4illin/convertx
+    container_name: convertx
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
+      - TZ=${TZ:-America/Chicago}
+      - UMASK=022 #optional
+      - JWT_SECRET=${CONVERTX_JWT_SECRET}
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.convertx.loadbalancer.server.port=3000
+      - traefik.http.routers.convertx.rule=Host(`convertx.thenewmans.casa`)
+    volumes:
+      - ../appdata/convertx:/app/data
+    ports:
+      - 3000:3000
+    restart: unless-stopped
