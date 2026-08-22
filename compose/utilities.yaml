@@ -17,3 +17,46 @@ services:
     ports:
       - 3000:3000
     restart: unless-stopped
+
+  zipline-db:
+    image: postgres:16-alpine
+    container_name: zipline-db
+    environment:
+      - POSTGRES_USER=zipline
+      - POSTGRES_PASSWORD=${ZIPLINE_DB_PASSWORD}
+      - POSTGRES_DB=zipline
+    volumes:
+      - ../appdata/zipline/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'zipline']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  zipline:
+    image: ghcr.io/diced/zipline:latest
+    container_name: zipline
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      - DATABASE_URL=postgres://zipline:${ZIPLINE_DB_PASSWORD}@zipline-db:5432/zipline
+      - CORE_SECRET=${ZIPLINE_CORE_SECRET}
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.zipline.loadbalancer.server.port=3000
+      - traefik.http.routers.zipline.rule=Host(`zipline.thenewmans.casa`)
+    volumes:
+      - ../appdata/zipline/uploads:/zipline/uploads
+      - ../appdata/zipline/public:/zipline/public
+      - ../appdata/zipline/themes:/zipline/themes
+    ports:
+      - 3001:3000
+    depends_on:
+      zipline-db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3000/api/healthcheck']
+      interval: 15s
+      timeout: 2s
+      retries: 2
+    restart: unless-stopped
