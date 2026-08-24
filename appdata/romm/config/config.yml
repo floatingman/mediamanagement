@@ -1,0 +1,177 @@
+emulatorjs:
+  cache_limit: null
+  controls: {}
+  debug: false
+  disable_auto_unload: false
+  disable_batch_bootup: false
+  netplay:
+    enabled: false
+    ice_servers: []
+  settings: {}
+exclude:
+  platforms:
+  - '#recycle'
+  - $RECYCLE.BIN
+  - .DocumentRevisions-V100
+  - .Spotlight-V100
+  - .Trash-*
+  - .fseventsd
+  - .stfolder
+  - '@eaDir'
+  - System Volume Information
+  - __MACOSX
+  - assets
+  roms:
+    multi_file:
+      names:
+      - '#recycle'
+      - $RECYCLE.BIN
+      - .DocumentRevisions-V100
+      - .Spotlight-V100
+      - .Trash-*
+      - .fseventsd
+      - .stfolder
+      - 3dboxes
+      - '@eaDir'
+      - BIOS Files
+      - Framework
+      - FrameworkKimmy
+      - Logs
+      - OpenBOR
+      - PSP
+      - Paks
+      - Saves
+      - ScreenShots
+      - System Volume Information
+      - __MACOSX
+      - assets
+      - backcovers
+      - bin
+      - covers
+      - fanart
+      - images
+      - manuals
+      - marquees
+      - media
+      - miximages
+      - physicalmedia
+      - screenshots
+      - thumbnails
+      - titlescreens
+      - videos
+      parts:
+        extensions:
+        - bak
+        - cache
+        - crdownload
+        - db
+        - ini
+        - lock
+        - log
+        - tmp
+        names:
+        - '*:Zone.Identifier'
+        - .DS_Store
+        - .Trashes
+        - .localized
+        - .stfolder
+        - '@SynoResource'
+        - gamelist.xml
+        - metadata.pegasus.txt
+    single_file:
+      extensions:
+      - bak
+      - cache
+      - crdownload
+      - db
+      - ini
+      - lock
+      - log
+      - tmp
+      names:
+      - '*:Zone.Identifier'
+      - .DS_Store
+      - .Trashes
+      - .localized
+      - .stfolder
+      - '@SynoResource'
+      - gamelist.xml
+      - launchopenbor.sh
+      - metadata.pegasus.txt
+      - systeminfo.txt
+filesystem:
+  firmware_folder: bios
+  roms_folder: roms
+  skip_hash_calculation: false
+scan:
+  gamelist:
+    export: true
+    media:
+      image: screenshot
+      thumbnail: box2d
+  media:
+  - box2d
+  - screenshot
+  - manual
+  pegasus:
+    export: true
+  priority:
+    artwork:
+    - sgdb
+    - igdb
+    - moby
+    - ss
+    - libretro
+    - ra
+    - launchbox
+    - gamelist
+    - hasheous
+    - tgdb
+    - flashpoint
+    - hltb
+    language:
+    - en
+    metadata:
+    - igdb
+    - moby
+    - ss
+    - ra
+    - launchbox
+    - gamelist
+    - hasheous
+    - tgdb
+    - flashpoint
+    - hltb
+    - sgdb
+    region:
+    - us
+    - wor
+    - ss
+    - eu
+    - jp
+    region_mode: prefer_rom_tags
+system:
+  platforms:
+    atarist: atari-st
+    dreamcast: dc
+    gameandwatch: g-and-w
+    gamecube: ngc
+    mame: arcade
+    mastersystem: sms
+    megacd: genesis
+    megadrive: genesis
+    megadrive-msu: genesis
+    n3ds: 3ds
+    neogeo: neogeoaes
+    neogeocd: neo-geo-cd
+    ngpc: neo-geo-pocket-color
+    pc98: pc-9800-series
+    pcengine: tg16
+    pcenginecd: turbografx-cd
+    pico8: pico
+    pokemini: pokemon-mini
+    sega32x: sega32
+    tg-cd: turbografx-cd
+    wasm4: wasm-4
+    x68000: sharp-x68000
+  versions: {}

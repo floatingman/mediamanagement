@@ -35,3 +35,56 @@ services:
       - ../appdata/mcsmanager-daemon/daemon/data:/opt/mcsmanager/daemon/data
       - ../appdata/mcsmanager-daemon/daemon/logs:/opt/mcsmanager/daemon/logs
       - /var/run/docker.sock:/var/run/docker.sock
+
+  romm-db:
+    image: mariadb:latest
+    container_name: romm-db
+    environment:
+      - MARIADB_ROOT_PASSWORD=${ROMM_DB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=romm
+      - MARIADB_USER=romm-user
+      - MARIADB_PASSWORD=${ROMM_DB_PASSWORD}
+    volumes:
+      - ../appdata/romm/db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 30s
+      start_interval: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  romm:
+    image: rommapp/romm:latest
+    container_name: romm
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      - DB_HOST=romm-db
+      - DB_NAME=romm # Must match MARIADB_DATABASE
+      - DB_USER=romm-user # Must match MARIADB_USER
+      - DB_PASSWD=${ROMM_DB_PASSWORD} # Must match MARIADB_PASSWORD
+      - ROMM_AUTH_SECRET_KEY=${ROMM_AUTH_SECRET_KEY}
+      - SCREENSCRAPER_USER=${SCREENSCRAPER_USER:-}
+      - SCREENSCRAPER_PASSWORD=${SCREENSCRAPER_PASSWORD:-}
+      - STEAMGRIDDB_API_KEY=${STEAMGRIDDB_API_KEY:-}
+      - RETROACHIEVEMENTS_API_KEY=${RETROACHIEVEMENTS_API_KEY:-}
+      - HASHEOUS_API_ENABLED=true
+      - HLTB_API_ENABLED=true
+      - SCAN_WORKERS=8
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.romm.loadbalancer.server.port=8080
+      - traefik.http.routers.romm.rule=Host(`romm.thenewmans.casa`)
+    ports:
+      - "8090:8080"
+    volumes:
+      - ../appdata/romm/resources:/romm/resources
+      - ../appdata/romm/redis:/redis-data
+      - ../appdata/romm/assets:/romm/assets
+      - ../appdata/romm/config:/romm/config
+      - /mnt/backups/Games/Roms/Core_Roms:/romm/library/roms
+    depends_on:
+      romm-db:
+        condition: service_healthy
+    restart: unless-stopped

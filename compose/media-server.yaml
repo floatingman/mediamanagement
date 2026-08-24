@@ -204,3 +204,23 @@ services:
       - traefik.enable=true
       - traefik.http.services.audiobookshelf.loadbalancer.server.port=80
       - traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.thenewmans.casa`)
+
+  calibre-web:
+    image: lscr.io/linuxserver/calibre-web:latest
+    container_name: calibre-web
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
+      - TZ=${TZ:-America/Chicago}
+      - DOCKER_MODS=linuxserver/mods:universal-calibre # adds calibre ebook-convert binary; remove for lightweight image
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.calibre-web.loadbalancer.server.port=8083
+      - traefik.http.routers.calibre-web.rule=Host(`calibre.thenewmans.casa`)
+    ports:
+      - "8083:8083"
+    volumes:
+      - ../appdata/calibre-web/config:/config
+      - ../appdata/calibre-web/config/custom-cont-init.d:/custom-cont-init.d # s6 v3 baseimage runs boot scripts from here (kepubify alias for calibre-web 0.6.27 binary-name check)
+      - /mnt/backups/Books:/books
+    restart: unless-stopped

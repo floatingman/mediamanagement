@@ -239,3 +239,14 @@ appdata/titlecardmaker/backups/
 appdata/titlecardmaker/cards/
 appdata/titlecardmaker/huey.db
 appdata/titlecardmaker/source/
+
+# calibre-web: only the custom boot script is tracked; runtime config stays local
+appdata/calibre-web/config/*
+!appdata/calibre-web/config/custom-cont-init.d/
+
+# RomM runtime data (config.yml is tracked)
+appdata/romm/db/
+appdata/romm/redis/
+appdata/romm/resources/
+appdata/romm/assets/
+appdata/romm/hoist_manifest_*.tsv
