@@ -137,7 +137,7 @@ services:
       - traefik.enable=true
       - traefik.http.services.tunarr.loadbalancer.server.port=8000
       - traefik.http.routers.tunarr.rule=Host(`tunarr.thenewmans.casa`)
-      - traefik.http.routers.tunarr.middlewares=authelia@docker
+      - traefik.http.routers.tunarr.middlewares=authelia-forwardauth@file
     volumes:
       # Choose a path on your host to map to /config/tunarr. This ensures
       # that restarting the container will not delete your settings or DB.

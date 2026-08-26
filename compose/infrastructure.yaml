@@ -6,6 +6,9 @@ services:
       - --api.insecure=true
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
+      - --providers.file=true
+      - --providers.file.watch=true
+      - --providers.file.filename=/etc/traefik/dynamic-vm.yml
       - --entrypoints.web.address=:80
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.websecure.address=:443
@@ -23,6 +26,7 @@ services:
       - 8080:8080
     volumes:
       - ../letsencrypt:/letsencrypt
+      - ../traefik-dynamic-vm-services.yml:/etc/traefik/dynamic-vm.yml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
 
