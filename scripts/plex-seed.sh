@@ -60,7 +60,7 @@ cmd_start() {
   fi
   preflight
   local excludes="${LIVE_EXCLUDES[*]}"
-  echo "[$(date -Is)] bulk seed starting -> $VM:$DEST" >> "$LOG"
+  echo "[$(date -Is)] bulk seed starting: LXC -> $VM:$DEST (CIFS -> //192.168.0.5/Media/plexvm on NAS)" >> "$LOG"
   setsid bash -c "
     docker exec plex bash -c 'cd /var/lib/plexmediaserver && tar cf - ${excludes} .' 2>/dev/null \
       | ssh $VM 'sudo tar xf - -C $DEST'
@@ -82,6 +82,7 @@ cmd_status() {
   target=$(count_bundles lxc)
   have=$(count_bundles "$VM" || echo "?")
   echo "Preview bundles: VM ${have:-?} / LXC ${target}"
+  echo "Destination: $VM:$DEST (NAS share: $(ssh "$VM" "awk '/plexvm/ {print \$1}' /proc/mounts" 2>/dev/null || echo "//192.168.0.5/Media/plexvm"))"
 }
 
 cmd_stop() {
