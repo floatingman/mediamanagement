@@ -1,24 +1,20 @@
+# Full stack — all services on this VM (GPU services included: plex, tunarr, ollama).
 include:
+  - compose/infrastructure.yaml
   - compose/auth.yaml
   - compose/downloaders.yaml
   - compose/media-management.yaml
+  - compose/media-server.yaml
   - compose/gaming.yaml
   - compose/bookmarks.yaml
+  - compose/ai.yaml
   - compose/utilities.yaml
 
 services:
-  # Linkwarden needs to reach ollama on the LXC (192.168.0.9)
-  linkwarden:
-    extra_hosts:
-      - "ollama:192.168.0.9"
-    ports:
-      # Need host port for LXC Traefik; 3002 to avoid conflict with convertx (:3000)
-      - "3002:3000"
-  # Expose authelia host port so LXC Traefik can forward-auth
+  # Host ports for LAN/admin access (Traefik handles subdomains internally)
   authelia:
     ports:
       - "9091:9091"
-  # Publish service ports for LXC Traefik proxy
   radarr:
     ports:
       - "7878:7878"
@@ -31,13 +27,9 @@ services:
   titlecardmaker:
     ports:
       - "4242:4242"
-  # sabnzbd has no host port in the base compose
   sabnzbd:
     ports:
-      - "8080:8080"
-  # qbittorrent uses gluetun's network namespace; port must be published on gluetun
+      - "8081:8080" # host 8080 is taken by the Traefik dashboard
   vpn:
     ports:
-      - "8181:8181"  # Pin mariadb to the version that wrote the data dir (LXC ran 12.3.2)
-  romm-db:
-    image: mariadb:12.3.2
+      - "8181:8181" # qBittorrent WebUI — it shares gluetun's network namespace

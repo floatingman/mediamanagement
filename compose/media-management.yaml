@@ -6,7 +6,7 @@ services:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1003}
       - TZ=${TZ:-America/Chicago}
-      - UMASK=022 #optional
+      - UMASK=022
     labels:
       - traefik.enable=true
       - traefik.http.services.radarr.loadbalancer.server.port=7878
@@ -26,7 +26,7 @@ services:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1003}
       - TZ=${TZ:-America/Chicago}
-      - UMASK=022 #optional
+      - UMASK=022
     labels:
       - traefik.enable=true
       - traefik.http.services.sonarr.loadbalancer.server.port=8989
@@ -45,7 +45,7 @@ services:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1003}
       - TZ=${TZ:-America/Chicago}
-      - UMASK=022 #optional
+      - UMASK=022
     labels:
       - traefik.enable=true
       - traefik.http.services.lidarr.loadbalancer.server.port=8686
@@ -88,7 +88,7 @@ services:
       - TZ=${TZ:-America/Chicago}
 
   profilarr:
-    image: santiagosayshey/profilarr:beta # Use :beta for early access to new features
+    image: santiagosayshey/profilarr:beta
     container_name: profilarr
     labels:
       - traefik.enable=true
@@ -97,9 +97,9 @@ services:
     ports:
       - 6868:6868
     volumes:
-      - ../appdata/profilarr:/config # Replace with your actual path
+      - ../appdata/profilarr:/config
     environment:
-      - TZ=${TZ:-America/Chicago} # Set your timezone
+      - TZ=${TZ:-America/Chicago}
     restart: unless-stopped
 
   titlecardmaker:

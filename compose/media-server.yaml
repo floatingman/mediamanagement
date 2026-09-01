@@ -2,25 +2,18 @@ services:
   plex:
     image: lscr.io/linuxserver/plex:latest
     container_name: plex
-    # ---------------------------------------------------------------------------
-    # HOST NETWORKING (network_mode: host): Plex binds directly to the host's
-    # interfaces, sitting on the LAN IP (192.168.0.9) like the native install.
-    # This is REQUIRED for remote access via UPnP auto port-mapping, because
-    # Docker bridge NAT traps UPnP multicast + NAT-PMP inside the bridge
-    # (plex.tv was only ever seeing the container's private 172.x IP).
-    # Access Plex via https://app.plex.tv or http://<host-ip>:32400.
-    # NOT behind Traefik — no plex.thenewmans.casa subdomain.
-    #
-    # Hardware transcoding via NVIDIA NVENC (GTX 1660 on this host). Requires
-    # Plex Pass. On a host WITHOUT nvidia-container-toolkit, delete the
-    # `runtime:` line and the NVIDIA_VISIBLE_DEVICES line below.
-    # ---------------------------------------------------------------------------
+    # Host networking is REQUIRED for remote access: Docker bridge NAT traps
+    # UPnP/NAT-PMP inside the bridge, so plex.tv never sees the real IP. Plex
+    # binds host ports directly (32400 main; 32469/1900 DLNA) and is NOT
+    # behind Traefik — reach it via https://app.plex.tv or
+    # http://<host-ip>:32400. Open 32400/tcp inbound on the router for remote
+    # access. NVENC hardware transcoding (Plex Pass) needs runtime: nvidia
+    # plus the `video` capability below; without it transcoding silently fails.
     network_mode: host
     runtime: nvidia
     environment:
-      # Must match the UID/GID that owns the Plex data dir. This server's native
-      # install ran as `plex` (999:996); a fresh server often uses 1000:1003.
-      # Override via PLEX_PUID / PLEX_PGID in .env (defaults match this server).
+      # Must match the UID/GID owning the Plex data dir (the migrated native
+      # install ran as 999:996). Override via PLEX_PUID / PLEX_PGID in .env.
       - PUID=${PLEX_PUID:-999}
       - PGID=${PLEX_PGID:-996}
       - TZ=${TZ:-America/Chicago}
@@ -29,26 +22,17 @@ services:
       # only injects compute+utility. `video` exposes the NVENC/NVDEC codec
       # libs; without it Plex Pass hardware transcoding silently fails.
       - NVIDIA_DRIVER_CAPABILITIES=compute,video,utility
-      # Only needed to claim a BRAND-NEW server (no migrated data). With existing
-      # data the machine identity already travels in Preferences.xml, so leave blank.
-      # Token: https://www.plex.tv/claim/
+      # Only needed to claim a BRAND-NEW server — migrated data carries its
+      # identity in Preferences.xml. Token: https://www.plex.tv/claim/
       - PLEX_CLAIM=${PLEX_CLAIM:-}
-    # With host networking, `ports:` is IGNORED — Plex binds host ports directly:
-    #   32400/tcp  (main web UI + apps + remote access)
-    #   32469/tcp + 1900/udp  (DLNA, if enabled in Plex settings)
-    #   3005/tcp (Companion/GDM), 8324/tcp (Roku)
-    # Firewall: open 32400/tcp inbound on the host/router for remote access.
     volumes:
-      # Plex config + library DBs + Metadata + the 605G Media store. Mounted at
-      # BOTH paths on purpose:
-      #   /config                    -> where linuxserver/plex looks for the data
-      #   /var/lib/plexmediaserver   -> the absolute path already baked into the
-      #                                 existing library DB, so media resolves
-      # On a new server, set PLEX_DATA_PATH in .env to wherever the data lives.
+      # Data dir (config + DBs + Metadata + Media store) mounted at BOTH paths:
+      # /config is where linuxserver/plex looks for it; /var/lib/plexmediaserver
+      # is the absolute path baked into the existing library DBs. Relocate via
+      # PLEX_DATA_PATH in .env.
       - ${PLEX_DATA_PATH:-/var/lib/plexmediaserver}:/config
       - ${PLEX_DATA_PATH:-/var/lib/plexmediaserver}:/var/lib/plexmediaserver
-      # Media libraries — bound at their IDENTICAL host paths so the existing
-      # library DB locations resolve unchanged after migration.
+      # Media libraries bound at identical host paths so DB locations resolve.
       - /mnt/perceptormedia:/mnt/perceptormedia
       - /mnt/perceptormediaexpansion:/mnt/perceptormediaexpansion
       - /mnt/ratchetmedia:/mnt/ratchetmedia
@@ -67,7 +51,7 @@ services:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1003}
       - TZ=${TZ:-America/Chicago}
-      - PORT=5055 #optional
+      - PORT=5055
     labels:
       - traefik.enable=true
       - traefik.http.services.seerr.loadbalancer.server.port=5055
@@ -99,7 +83,8 @@ services:
       - traefik.http.services.tautulli.loadbalancer.server.port=8181
       - traefik.http.routers.tautulli.rule=Host(`tautulli.thenewmans.casa`)
     ports:
-      - 8181:8181
+      # LAN access on host 8182 — 8181 is reserved for gluetun/qbittorrent (vpn service)
+      - 8182:8181
 
   agregarr:
     image: agregarr/agregarr:latest
@@ -123,24 +108,17 @@ services:
     container_name: tunarr
     ports:
       - ${TUNARR_SERVER_PORT:-8000}:8000
-    # Uncomment if using the Nvidia container
     runtime: nvidia
     environment:
       - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
-      # Replace this with your timezone to ensure accurate guide
-      # data and scheduling.
       - TZ=${TZ:-America/Chicago}
-      # Uncomment if you'd like to adjust default config path
-      # - TUNARR_DATABASE_PATH=/your/path/tunarr
       - NVIDIA_VISIBLE_DEVICES=all
     labels:
       - traefik.enable=true
       - traefik.http.services.tunarr.loadbalancer.server.port=8000
       - traefik.http.routers.tunarr.rule=Host(`tunarr.thenewmans.casa`)
-      - traefik.http.routers.tunarr.middlewares=authelia-forwardauth@file
+      - traefik.http.routers.tunarr.middlewares=authelia@docker
     volumes:
-      # Choose a path on your host to map to /config/tunarr. This ensures
-      # that restarting the container will not delete your settings or DB.
       - ../appdata/tunarr:/config/tunarr
     restart: unless-stopped
 
@@ -165,7 +143,7 @@ services:
       - traefik.http.routers.cleanuparr.rule=Host(`cleanuparr.thenewmans.casa`)
 
   maintainerr:
-    image: ghcr.io/maintainerr/maintainerr:latest # or jorenn92/maintainerr:latest
+    image: ghcr.io/maintainerr/maintainerr:latest
     container_name: maintainerr
     user: "${PUID:-1000}:${PGID:-1003}"
     volumes:
@@ -173,11 +151,9 @@ services:
         source: ../appdata/maintainerr
         target: /opt/data
     environment:
-      - TZ=${TZ:-America/Chicago} # Set your timezone
-      #      - BASE_PATH=/maintainerr # uncomment if you're serving maintainerr from a subdirectory
-      #      - UI_HOSTNAME=:: # uncomment if you want to listen on IPv6 instead (default 0.0.0.0)
-      #      - UI_PORT=6247 # uncomment to change the UI port (default 6246)
-      - GITHUB_TOKEN=${MAINTAINERR_GITHUB_TOKEN} # Optional: GitHub Personal Access Token for higher API rate limits (60/hr without, 5000/hr with token)
+      - TZ=${TZ:-America/Chicago}
+      # PAT raises the GitHub API rate limit (60/hr -> 5000/hr)
+      - GITHUB_TOKEN=${MAINTAINERR_GITHUB_TOKEN}
     labels:
       - traefik.enable=true
       - traefik.http.services.maintainerr.loadbalancer.server.port=6246

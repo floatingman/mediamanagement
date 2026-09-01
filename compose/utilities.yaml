@@ -6,7 +6,7 @@ services:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1003}
       - TZ=${TZ:-America/Chicago}
-      - UMASK=022 #optional
+      - UMASK=022
       - JWT_SECRET=${CONVERTX_JWT_SECRET}
     labels:
       - traefik.enable=true
@@ -55,7 +55,7 @@ services:
       zipline-db:
         condition: service_healthy
     healthcheck:
-      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3000/api/healthcheck']
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3000/api/healthcheck']
       interval: 15s
       timeout: 2s
       retries: 2

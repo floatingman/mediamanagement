@@ -27,7 +27,7 @@ services:
       - MEILI_HOST=http://linkwarden-search:7700
       - MEILI_MASTER_KEY=${LINKWARDEN_MEILI_MASTER_KEY}
       - NEXT_PUBLIC_OLLAMA_ENDPOINT_URL=http://ollama:11434
-      - OLLAMA_MODEL=${OLLAMA_MODEL}     # from .env (default gemma3:4b)
+      - OLLAMA_MODEL=${OLLAMA_MODEL}
     labels:
       - traefik.enable=true
       - traefik.http.services.linkwarden.loadbalancer.server.port=3000

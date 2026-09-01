@@ -1,14 +1,11 @@
 services:
   proxy:
-    image: traefik:v3.6 # Review traefik documentation https://doc.traefik.io/traefik/
+    image: traefik:v3.6
     container_name: traefik
     command:
       - --api.insecure=true
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
-      - --providers.file=true
-      - --providers.file.watch=true
-      - --providers.file.filename=/etc/traefik/dynamic-vm.yml
       - --entrypoints.web.address=:80
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.websecure.address=:443
@@ -26,12 +23,11 @@ services:
       - 8080:8080
     volumes:
       - ../letsencrypt:/letsencrypt
-      - ../traefik-dynamic-vm-services.yml:/etc/traefik/dynamic-vm.yml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
 
   domain:
-    image: favonia/cloudflare-ddns:latest # Review doc https://github.com/favonia/cloudflare-ddns
+    image: favonia/cloudflare-ddns:latest
     container_name: cloudflare-ddns
     environment:
       - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_DNS_TOKEN}

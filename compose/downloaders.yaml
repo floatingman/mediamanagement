@@ -4,9 +4,8 @@ services:
     container_name: gluetun
     cap_add:
       - NET_ADMIN
-    # kernelspace WireGuard uses the in-kernel driver over netlink and does NOT
-    # require /dev/net/tun — so no `devices:` mapping is needed. This avoids the
-    # Proxmox LXC TUN-passthrough requirement entirely.
+    # kernelspace WireGuard uses the in-kernel driver over netlink — no
+    # /dev/net/tun `devices:` mapping needed.
     volumes:
       - ../appdata/gluetun:/gluetun
     environment:
@@ -43,7 +42,6 @@ services:
 
   torrent:
     image: ghcr.io/linuxserver/qbittorrent
-    # image: ghcr.io/linuxserver/qbittorrent:14.3.9
     container_name: qbittorrent
     network_mode: service:vpn
     environment:
