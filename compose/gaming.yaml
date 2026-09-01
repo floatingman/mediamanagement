@@ -16,6 +16,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ../appdata/mcsmanager-web/data:/opt/mcsmanager/web/data
       - ../appdata/mcsmanager-web/web/logs:/opt/mcsmanager/web/logs
+    restart: unless-stopped
 
   mcsmanager-daemon:
     image: githubyumao/mcsmanager-daemon:latest
