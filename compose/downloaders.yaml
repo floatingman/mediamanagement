@@ -4,14 +4,17 @@ services:
     container_name: gluetun
     cap_add:
       - NET_ADMIN
-    # kernelspace WireGuard uses the in-kernel driver over netlink — no
-    # /dev/net/tun `devices:` mapping needed.
+    # Userspace wireguard-go (creates its own TUN via /dev/net/tun, which plain
+    # Docker provides). Kernelspace wedged gluetun's supervisor during a
+    # healthcheck-triggered VPN restart — teardown hung on the wg interface and
+    # the tunnel sat silently dead for hours. Kernelspace was only ever a
+    # Proxmox-LXC workaround.
     volumes:
       - ../appdata/gluetun:/gluetun
     environment:
       - VPN_SERVICE_PROVIDER=protonvpn
       - VPN_TYPE=wireguard
-      - WIREGUARD_IMPLEMENTATION=kernelspace
+      - WIREGUARD_IMPLEMENTATION=userspace
       - WIREGUARD_PRIVATE_KEY=${PROTONVPN_WIREGUARD_PRIVATE_KEY}
       # ProtonVPN server selection — all SERVER_* filters are ANDed.
       - SERVER_CITIES=Chicago
