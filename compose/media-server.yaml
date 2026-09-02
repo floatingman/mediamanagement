@@ -119,7 +119,10 @@ services:
       - traefik.http.routers.tunarr.rule=Host(`tunarr.thenewmans.casa`)
       - traefik.http.routers.tunarr.middlewares=authelia@docker
     volumes:
-      - ../appdata/tunarr:/config/tunarr
+      # Lives on the fast local data disk (with the Plex store) — tunarr's ~11G of
+      # DB + meilisearch index + image cache saturates the slow root virtual disk
+      # during library scans, wedging the whole VM's I/O.
+      - /var/lib/plexmediaserver/tunarr-data:/config/tunarr
     restart: unless-stopped
 
   cleanuparr:
