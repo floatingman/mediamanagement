@@ -13,10 +13,10 @@ services:
       - traefik.http.routers.radarr.rule=Host(`radarr.thenewmans.casa`)
     volumes:
       - ../appdata/radarr:/config
-      - /mnt/perceptormedia/Video/Movies:/media
-      - /mnt/ratchetmedia/Movies/:/ratchetmedia
-      - /mnt/downloads:/downloads
-      - /mnt/downloads/torrents/complete:/torrentdownloads
+      - ${PERCEPTOR_MEDIA:-/mnt/perceptormedia}/Video/Movies:/media
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Movies/:/ratchetmedia
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Downloads:/downloads
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Downloads/torrents/complete:/torrentdownloads
     restart: unless-stopped
 
   sonarr:
@@ -33,9 +33,9 @@ services:
       - traefik.http.routers.sonarr.rule=Host(`sonarr.thenewmans.casa`)
     volumes:
       - ../appdata/sonarr:/config
-      - /mnt/perceptormedia/Video/TV/:/media
-      - /mnt/ratchetmedia/TVShows/:/ratchetmedia
-      - /mnt/downloads:/downloads
+      - ${PERCEPTOR_MEDIA:-/mnt/perceptormedia}/Video/TV/:/media
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/TVShows/:/ratchetmedia
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Downloads:/downloads
     restart: unless-stopped
 
   lidarr:
@@ -52,8 +52,8 @@ services:
       - traefik.http.routers.lidarr.rule=Host(`lidarr.thenewmans.casa`)
     volumes:
       - ../appdata/lidarr:/config
-      - /mnt/perceptormediaexpansion/Audio/music:/media
-      - /mnt/downloads:/downloads
+      - ${PERCEPTOR_EXPANSION:-/mnt/perceptormediaexpansion}/Audio/music:/media
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Downloads:/downloads
     restart: unless-stopped
 
   bazarr:
@@ -69,10 +69,10 @@ services:
       - traefik.http.routers.bazarr.rule=Host(`bazarr.thenewmans.casa`)
     volumes:
       - ../appdata/bazarr:/config
-      - /mnt/ratchetmedia/Movies:/ratchetmediamovies
-      - /mnt/ratchetmedia/TVShows:/ratchetmediatvshows
-      - /mnt/perceptormedia/Video/Movies:/Movies
-      - /mnt/perceptormedia/Video/TV:/TV
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Movies:/ratchetmediamovies
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/TVShows:/ratchetmediatvshows
+      - ${PERCEPTOR_MEDIA:-/mnt/perceptormedia}/Video/Movies:/Movies
+      - ${PERCEPTOR_MEDIA:-/mnt/perceptormedia}/Video/TV:/TV
     ports:
       - 6767:6767
     restart: unless-stopped
@@ -114,6 +114,6 @@ services:
     volumes:
       - ../appdata/titlecardmaker:/config
       # TV libraries — aliases mirror Sonarr so episode paths line up with no path mapping:
-      - /mnt/perceptormedia/Video/TV:/media
-      - /mnt/ratchetmedia/TVShows:/ratchetmedia
+      - ${PERCEPTOR_MEDIA:-/mnt/perceptormedia}/Video/TV:/media
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/TVShows:/ratchetmedia
     restart: unless-stopped

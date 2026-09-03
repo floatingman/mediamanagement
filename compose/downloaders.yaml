@@ -38,8 +38,7 @@ services:
       - traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.thenewmans.casa`)
     volumes:
       - ../appdata/sabnzbd:/config
-      - /mnt/downloads:/downloads
-      - ../downloads/nzb/incomplete:/incomplete-downloads
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Downloads:/downloads
       - ../../syncs/Sync/nzb:/watch
     restart: unless-stopped
 
@@ -65,6 +64,6 @@ services:
       - traefik.http.routers.torrent.rule=Host(`torrent.thenewmans.casa`)
     volumes:
       - ../appdata/qbittorrent:/config
-      - /mnt/downloads/torrents:/downloads
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Downloads/torrents:/downloads
       - ../../syncs/Sync/torrent:/watch
     restart: unless-stopped

@@ -33,10 +33,10 @@ services:
       - ${PLEX_DATA_PATH:-/var/lib/plexmediaserver}:/config
       - ${PLEX_DATA_PATH:-/var/lib/plexmediaserver}:/var/lib/plexmediaserver
       # Media libraries bound at identical host paths so DB locations resolve.
-      - /mnt/perceptormedia:/mnt/perceptormedia
-      - /mnt/perceptormediaexpansion:/mnt/perceptormediaexpansion
-      - /mnt/ratchetmedia:/mnt/ratchetmedia
-      - /mnt/downloads:/mnt/downloads
+      - ${PERCEPTOR_MEDIA:-/mnt/perceptormedia}:/mnt/perceptormedia
+      - ${PERCEPTOR_EXPANSION:-/mnt/perceptormediaexpansion}:/mnt/perceptormediaexpansion
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}:/mnt/ratchetmedia
+      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Downloads:/mnt/downloads
       # Keep transcodes on fast host tmp instead of inside the (huge) data dir.
       - /tmp:/transcode
     # No Traefik labels — Plex is reached via app.plex.tv / host IP, not a subdomain.
@@ -91,8 +91,8 @@ services:
     container_name: agregarr
     volumes:
       - ../appdata/agregarr:/app/config
-      - /mnt/perceptormedia/placeholders/movies:/data/movies
-      - /mnt/perceptormedia/placeholders/tv:/data/tv
+      - ${PERCEPTOR_MEDIA:-/mnt/perceptormedia}/placeholders/movies:/data/movies
+      - ${PERCEPTOR_MEDIA:-/mnt/perceptormedia}/placeholders/tv:/data/tv
     environment:
       - TZ=${TZ:-America/Chicago}
     labels:
@@ -122,7 +122,7 @@ services:
       # Lives on the fast local data disk (with the Plex store) — tunarr's ~11G of
       # DB + meilisearch index + image cache saturates the slow root virtual disk
       # during library scans, wedging the whole VM's I/O.
-      - /var/lib/plexmediaserver/tunarr-data:/config/tunarr
+      - ${PLEX_DATA_PATH:-/var/lib/plexmediaserver}/tunarr-data:/config/tunarr
     restart: unless-stopped
 
   cleanuparr:
@@ -173,8 +173,8 @@ services:
     ports:
       - 13378:80
     volumes:
-      - /mnt/perceptormediaexpansion/Audio/audiobooks:/audiobooks
-      - /mnt/perceptormediaexpansion/Audio/podcasts:/podcasts
+      - ${PERCEPTOR_EXPANSION:-/mnt/perceptormediaexpansion}/Audio/audiobooks:/audiobooks
+      - ${PERCEPTOR_EXPANSION:-/mnt/perceptormediaexpansion}/Audio/podcasts:/podcasts
       - ../appdata/audiobookshelf/config:/config
       - ../appdata/audiobookshelf/data:/metadata
     environment:
@@ -201,5 +201,5 @@ services:
     volumes:
       - ../appdata/calibre-web/config:/config
       - ../appdata/calibre-web/config/custom-cont-init.d:/custom-cont-init.d # s6 v3 baseimage runs boot scripts from here (kepubify alias for calibre-web 0.6.27 binary-name check)
-      - /mnt/backups/Books:/books
+      - ${BACKUPS:-/mnt/backups}/Books:/books
     restart: unless-stopped
