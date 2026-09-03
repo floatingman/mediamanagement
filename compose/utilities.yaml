@@ -60,3 +60,26 @@ services:
       timeout: 2s
       retries: 2
     restart: unless-stopped
+
+  syncthing:
+    image: ghcr.io/linuxserver/syncthing
+    container_name: syncthing
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
+      - TZ=${TZ:-America/Chicago}
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.syncthing.loadbalancer.server.port=8384
+      - traefik.http.routers.syncthing.rule=Host(`sync.thenewmans.casa`)
+    volumes:
+      - ../appdata/syncthing:/config
+      # Synced drop folders consumed by the *arr stack: Sync/nzb → SABnzbd
+      # watch dir (/watch), Sync/torrent → qBittorrent watch dir (/watch).
+      - ../../syncs/Sync:/sync
+    ports:
+      - 8384:8384 # Web GUI (also at sync.thenewmans.casa)
+      - 22000:22000/tcp # Sync protocol
+      - 22000:22000/udp # QUIC
+      - 21027:21027/udp # Local discovery broadcasts
+    restart: unless-stopped
