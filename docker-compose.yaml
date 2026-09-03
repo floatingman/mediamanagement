@@ -1,3 +1,4 @@
+# Full stack — all services on this VM (GPU services included: plex, tunarr, ollama).
 include:
   - compose/infrastructure.yaml
   - compose/auth.yaml
@@ -8,3 +9,27 @@ include:
   - compose/bookmarks.yaml
   - compose/ai.yaml
   - compose/utilities.yaml
+
+services:
+  # Host ports for LAN/admin access (Traefik handles subdomains internally)
+  authelia:
+    ports:
+      - "9091:9091"
+  radarr:
+    ports:
+      - "7878:7878"
+  sonarr:
+    ports:
+      - "8989:8989"
+  lidarr:
+    ports:
+      - "8686:8686"
+  titlecardmaker:
+    ports:
+      - "4242:4242"
+  sabnzbd:
+    ports:
+      - "8081:8080" # host 8080 is taken by the Traefik dashboard
+  vpn:
+    ports:
+      - "8181:8181" # qBittorrent WebUI — it shares gluetun's network namespace

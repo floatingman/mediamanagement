@@ -16,6 +16,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ../appdata/mcsmanager-web/data:/opt/mcsmanager/web/data
       - ../appdata/mcsmanager-web/web/logs:/opt/mcsmanager/web/logs
+    restart: unless-stopped
 
   mcsmanager-daemon:
     image: githubyumao/mcsmanager-daemon:latest
@@ -83,7 +84,7 @@ services:
       - ../appdata/romm/redis:/redis-data
       - ../appdata/romm/assets:/romm/assets
       - ../appdata/romm/config:/romm/config
-      - /mnt/backups/Games/Roms/Core_Roms:/romm/library/roms
+      - ${BACKUPS:-/mnt/backups}/Games/Roms/Core_Roms:/romm/library/roms
     depends_on:
       romm-db:
         condition: service_healthy
