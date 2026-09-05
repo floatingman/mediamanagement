@@ -28,6 +28,7 @@ Docker Compose-based home media automation stack for the Newman household.
 | Maintainerr | `maintainerr.thenewmans.casa` | Library maintenance |
 | Audiobookshelf | `audiobookshelf.thenewmans.casa` | Audiobook/podcast server |
 | Linkwarden | `linkwarden.thenewmans.casa` | Bookmark manager |
+| nextDash | `dash.thenewmans.casa` | Bookmark dashboard (login via Authelia) |
 | MCS Manager | `minecraft.thenewmans.casa` | Minecraft server UI |
 | Syncthing | `sync.thenewmans.casa` | File sync → SABnzbd/qBittorrent watch folders |
 

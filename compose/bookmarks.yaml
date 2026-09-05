@@ -38,3 +38,21 @@ services:
       - linkwarden-db
       - linkwarden-search
     restart: unless-stopped
+
+  # Keyboard-first self-hosted bookmark dashboard (no built-in accounts —
+  # gated by the Authelia forward-auth middleware, like tunarr).
+  nextdash:
+    image: ghcr.io/jordibrouwer/nextdash:latest
+    container_name: nextdash
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      # Required header on destructive API calls; dashboard supplies it automatically
+      - NEXTDASH_WRITE_TOKEN=${NEXTDASH_WRITE_TOKEN}
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.nextdash.loadbalancer.server.port=8080
+      - traefik.http.routers.nextdash.rule=Host(`dash.thenewmans.casa`)
+      - traefik.http.routers.nextdash.middlewares=authelia@docker
+    volumes:
+      - ../appdata/nextdash:/app/data
+    restart: unless-stopped
