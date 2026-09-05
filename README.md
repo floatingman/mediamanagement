@@ -31,6 +31,7 @@ Docker Compose-based home media automation stack for the Newman household.
 | nextDash | `dash.thenewmans.casa` | Bookmark dashboard (login via Authelia) |
 | MCS Manager | `minecraft.thenewmans.casa` | Minecraft server UI |
 | Syncthing | `sync.thenewmans.casa` | File sync → SABnzbd/qBittorrent watch folders |
+| SearXNG | `search.thenewmans.casa` | Private meta-search engine (open + bot limiter; JSON API enabled) |
 
 ## Prerequisites
 

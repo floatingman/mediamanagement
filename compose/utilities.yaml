@@ -83,3 +83,30 @@ services:
       - 22000:22000/udp # QUIC
       - 21027:21027/udp # Local discovery broadcasts
     restart: unless-stopped
+
+  # Self-hosted meta-search engine. Open (no Authelia) by design so it can
+  # serve as browser default search + JSON API for tools; the SearXNG bot
+  # limiter backed by valkey is the abuse protection.
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    environment:
+      - TZ=${TZ:-America/Chicago}
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.searxng.loadbalancer.server.port=8080
+      - traefik.http.routers.searxng.rule=Host(`search.thenewmans.casa`)
+    volumes:
+      - ../appdata/searxng/config:/etc/searxng
+      - ../appdata/searxng/cache:/var/cache/searxng
+    depends_on:
+      - searxng-valkey
+    restart: unless-stopped
+
+  searxng-valkey:
+    image: valkey/valkey:9-alpine
+    container_name: searxng-valkey
+    command: valkey-server --save 30 1 --loglevel warning
+    volumes:
+      - ../appdata/searxng/valkey:/data
+    restart: unless-stopped
