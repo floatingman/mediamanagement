@@ -7,6 +7,8 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - OLLAMA_HOST=0.0.0.0:11434   # listen on all interfaces
       - OLLAMA_KEEP_ALIVE=24h       # keep model resident in VRAM (use -1 to never unload)
+      - OLLAMA_FLASH_ATTENTION=1    # required for KV cache quantization below
+      - OLLAMA_KV_CACHE_TYPE=q8_0   # halve KV memory: qwen3:4b @32k ctx fits fully in the 8GB GPU (Perplexica hardcodes num_ctx=32000)
     volumes:
       - ../appdata/ollama:/root/.ollama
     ports:
