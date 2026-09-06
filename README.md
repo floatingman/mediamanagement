@@ -32,6 +32,7 @@ Docker Compose-based home media automation stack for the Newman household.
 | MCS Manager | `minecraft.thenewmans.casa` | Minecraft server UI |
 | Syncthing | `sync.thenewmans.casa` | File sync → SABnzbd/qBittorrent watch folders |
 | SearXNG | `search.thenewmans.casa` | Private meta-search engine (open + bot limiter; JSON API enabled) |
+| Perplexica | `perplexica.thenewmans.casa` | AI search (SearXNG + Ollama; login via Authelia) |
 
 ## Prerequisites
 

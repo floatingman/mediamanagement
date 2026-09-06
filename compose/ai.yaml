@@ -12,3 +12,24 @@ services:
     ports:
       - "11434:11434"               # publish to host so LAN clients can reach it
     restart: unless-stopped
+
+  # Perplexica (upstream renamed to Vane) — AI search UI on top of the
+  # internal SearXNG instance; LLM via the ollama container above.
+  # Model is picked on first visit (setup screen); provider auto-registers
+  # from OLLAMA_BASE_URL and discovers models via /api/tags.
+  perplexica:
+    image: itzcrazykns1337/vane:slim-latest
+    container_name: perplexica
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      - SEARXNG_API_URL=http://searxng:8080
+      - OLLAMA_BASE_URL=http://ollama:11434
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.perplexica.loadbalancer.server.port=3000
+      - traefik.http.routers.perplexica.rule=Host(`perplexica.thenewmans.casa`)
+      # No built-in auth — gated by Authelia forward-auth, like tunarr/nextDash
+      - traefik.http.routers.perplexica.middlewares=authelia@docker
+    volumes:
+      - ../appdata/perplexica/data:/home/vane/data
+    restart: unless-stopped
