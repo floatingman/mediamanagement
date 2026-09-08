@@ -72,7 +72,7 @@ services:
       - RETROACHIEVEMENTS_API_KEY=${RETROACHIEVEMENTS_API_KEY:-}
       - HASHEOUS_API_ENABLED=true
       - HLTB_API_ENABLED=true
-      - SCAN_WORKERS=8
+      - SCAN_WORKERS=12
     labels:
       - traefik.enable=true
       - traefik.http.services.romm.loadbalancer.server.port=8080
