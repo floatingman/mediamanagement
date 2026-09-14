@@ -28,6 +28,9 @@ session:
       authelia_url: 'https://auth.thenewmans.casa'
       expiration: '12h'
       inactivity: '45m'
+  redis:
+    host: authelia-valkey
+    port: 6379
 
 regulation:
   max_retries: 3

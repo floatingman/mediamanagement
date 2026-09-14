@@ -18,3 +18,15 @@ services:
     volumes:
       - ../appdata/authelia:/config
     restart: unless-stopped
+    depends_on:
+      - authelia-valkey
+  # Session store for Authelia. Without it, sessions live in authelia's
+  # memory and every container restart forces a re-login. AOF persistence
+  # (appendonly) keeps sessions across full stack restarts too.
+  authelia-valkey:
+    image: valkey/valkey:9-alpine
+    container_name: authelia-valkey
+    command: valkey-server --appendonly yes --loglevel warning
+    volumes:
+      - ../appdata/authelia/valkey:/data
+    restart: unless-stopped
