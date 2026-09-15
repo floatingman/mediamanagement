@@ -1,0 +1,9 @@
+# Created here (not by helm --create-namespace) because the ConfigMap and
+# Secret below must land in this namespace BEFORE the helm release starts.
+# Single namespace object matching the kustomization namespace — the kustomize
+# namespace transformer renames it to itself (no-op), unlike multiple
+# namespaces in one kustomization, which collide.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: traefik

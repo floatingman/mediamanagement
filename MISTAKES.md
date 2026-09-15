@@ -34,3 +34,9 @@ Do not record transient tool failures or unverified guesses.
 **Root cause:** Embedded YAML inside ConfigMaps and helm chart schemas were never parsed against a real consumer — eyeballing flow-style YAML hides key errors, and chart values keys move between chart versions.
 **Prevention:** For every k8s scaffold: `kubectl kustomize` the overlays, yaml-parse any ConfigMap-embedded config, and `helm template` with the exact values file BEFORE calling it done.
 **Verification:** kustomize renders clean, pyyaml round-trips external-services.yml (22 routers ↔ 22 services), helm template succeeds against traefik chart 41.5.0 and csi-driver-nfs with the shipped values.
+
+### [2026-09-15] Kustomize namespace circular dependency with helm --create-namespace
+**Mistake:** Removed the Namespace object from k8s/foundation (to fix a kustomize ID conflict) and relied on `helm --create-namespace` to create it — but the ConfigMap/Secret the chart consumes must land in that namespace BEFORE the helm install, so `kubectl apply -k` failed with "namespaces traefik not found".
+**Root cause:** Split the create-order between two tools; the apply order in the runbook depended on a namespace only helm would make.
+**Prevention:** A kustomization with `namespace: X` may ship a single same-named Namespace object (the transformer no-ops on it); only multiple different namespaces in one kustomization collide. Prefer declaring the namespace in manifests over deferring to helm.
+**Verification:** `kubectl apply -k k8s/foundation` now creates namespace/traefik first; full §6 deploy succeeded on the live cluster.

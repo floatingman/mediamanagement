@@ -24,5 +24,6 @@ secretGenerator:
     envs:
       - env.txt
 resources:
+  - namespace.yaml
   - traefik-external-services.yaml
   - nfs-volumes.yaml
