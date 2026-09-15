@@ -244,8 +244,9 @@ tagging on a new bookmark (ollama via the VM), check archived snapshots
 Note: after stopping the compose trio the VM Traefik has no linkwarden backend
 and the subdomain 404s. The interim fix (deployed 2026-09-15): the VM edge
 loads `traefik-dyn/transition.yaml` (file provider added to the proxy service
-in compose/infrastructure.yaml) and forwards `linkwarden.` and `rancher.`
-to the cluster edge at https://192.168.0.19 — so both subdomains work
+in compose/infrastructure.yaml) and forwards every migrated subdomain
+(linkwarden, auth, dash, convertx, zipline, headlamp)
+to the cluster edge at https://192.168.0.19 — so they all work
 immediately, before the full Step 9 cutover. The VM Traefik issues its own
 LE certs for them; first request after adding a host may stall ~10s during
 ACME. The file, the two provider args, and the `/dyn` volume mount all
@@ -297,7 +298,7 @@ Public IP is unchanged, so cloudflare-ddns needs nothing.
 for h in auth radarr sonarr lidarr bazarr sabnzbd torrent seerr tautulli \
          agregarr tunarr cleanuparr maintainerr profilarr titlecardmaker \
          audiobookshelf calibre romm minecraft convertx zipline sync \
-         search perplexica linkwarden rancher; do
+         search perplexica linkwarden headlamp; do
   echo -n "$h: "; curl -sIo /dev/null -w '%{http_code}\n' https://$h.thenewmans.casa
 done
 ```
@@ -316,14 +317,20 @@ Any 5xx/timeout: `kubectl -n traefik logs deploy/traefik` and the dashboard.
   `kubectl apply -k` the affected kustomization.
 - **Reset a botched cluster**: `/usr/local/bin/k3s-killall.sh` +
   `/usr/local/bin/k3s-uninstall.sh` per node, then redo Step 3.
-- **Rancher GUI**: deployed (2026-09-15) — `k8s/helm/rancher-values.yaml`
-  (v2.15.1, 1 replica, LE cert via Traefik annotations) plus cert-manager
-  (jetstack, required by the chart even with `ingress.tls.source=rancher`).
-  Access after edge cutover: https://rancher.thenewmans.casa. Until then:
-  `kubectl -n cattle-system port-forward svc/rancher 8443:443` ->
-  https://localhost:8443. First login uses the bootstrap password passed at
-  install (`--set bootstrapPassword=...`; recover via
-  `helm get values rancher -n cattle-system`).
+- **Web GUI — Headlamp**: deployed 2026-09-15 (chart `headlamp/headlamp` from
+  https://kubernetes-sigs.github.io/headlamp/, ns `headlamp`) at
+  https://headlamp.thenewmans.casa, gated by authelia, then a cluster token:
+  `kubectl -n headlamp create token headlamp-admin --duration=87600h`.
+  **Rancher REMOVED same day:** v2.15.1 (the only release supporting k8s
+  1.36) has a fatal bug here — ~60s after the pod starts, something it runs
+  DELETES the `cluster-admin` ClusterRole, then rancher fatals on its own
+  broken RBAC and every startup repeats the cycle. Verified empirically
+  (role survives with rancher scaled to 0, dies when it runs, on a fully
+  clean reinstall). If it's ever retried on a newer release: uninstall
+  requires deleting ns cattle-* + cattle CRDs (strip finalizers) + the
+  v1.ext.cattle.io APIService, and RECREATE cluster-admin afterward:
+  `kubectl apply -f -` with the standard rules (`apiGroups: ["*"]`,
+  `resources: ["*"]`, `verbs: ["*"]`, `nonResourceURLs: ["*"]`).
 
 ## 11. Roadmap after this guide
 

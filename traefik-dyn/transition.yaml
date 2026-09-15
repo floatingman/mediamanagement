@@ -26,11 +26,6 @@ http:
       entryPoints: [websecure]
       service: k8s-edge
       tls: {certResolver: letsencrypt}
-    rancher-k8s:
-      rule: Host(`rancher.thenewmans.casa`)
-      entryPoints: [websecure]
-      service: k8s-edge
-      tls: {certResolver: letsencrypt}
     dash-k8s:
       rule: Host(`dash.thenewmans.casa`)
       entryPoints: [websecure]
@@ -43,6 +38,11 @@ http:
       tls: {certResolver: letsencrypt}
     zipline-k8s:
       rule: Host(`zipline.thenewmans.casa`)
+      entryPoints: [websecure]
+      service: k8s-edge
+      tls: {certResolver: letsencrypt}
+    headlamp-k8s:
+      rule: Host(`headlamp.thenewmans.casa`)
       entryPoints: [websecure]
       service: k8s-edge
       tls: {certResolver: letsencrypt}

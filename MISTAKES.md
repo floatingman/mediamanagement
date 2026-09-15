@@ -52,3 +52,9 @@ Do not record transient tool failures or unverified guesses.
 **Root cause:** (1) Kubernetes service-link env injection interacts with apps that claim broad env prefixes. (2) Violated the migration runbook's own rule (delete the VM-forward block the moment a service gets an IngressRoute) during a multi-service wave.
 **Prevention:** For env-greedy apps (authelia): `enableServiceLinks: false` in the pod spec, or avoid the prefix in service names. After each service cutover, immediately prune its router from BOTH edge configs and re-run the full subdomain sweep.
 **Verification:** enableServiceLinks=false rollout healthy (authelia 1/1, health 200); after ConfigMap prune, all 26 subdomains answer with expected codes and dash gates through the cluster authelia.
+
+### [2026-09-15] Rancher 2.15.1 on k3s 1.36 deletes the cluster-admin ClusterRole
+**Mistake:** Diagnosed the user's rancher login failure as a bootstrap-state problem and burned many cycles re-arming bootstrap, resetting passwords, and reinstalling — while the real fault was rancher itself deleting `cluster-admin` and fataling on its own RBAC; the 401s were a symptom of the auth stack never finishing init.
+**Root cause:** Empirically verified: role survives with rancher scaled to 0, is deleted ~60s after the pod runs (also on a fully clean reinstall), and older chart lines (≤2.14.3) refuse k8s 1.36. Own kubectl kept working because the k3s kubeconfig authenticates as system:masters, masking cluster-wide RBAC breakage.
+**Prevention:** When a packaged platform's auth/bootstrap misbehaves, check CLUSTER-WIDE health (default ClusterRoles, CRDs, APIServices) before iterating on the app's own state; a system:masters kubeconfig hides RBAC damage. Pin web-GUI choice to versions with real (not ceiling-bumped) k8s support.
+**Verification:** Rancher fully uninstalled (ns + CRDs + APIService), cluster-admin recreated and stable, Headlamp deployed and verified as the replacement GUI.
