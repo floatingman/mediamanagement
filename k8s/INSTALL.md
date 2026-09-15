@@ -293,7 +293,7 @@ Public IP is unchanged, so cloudflare-ddns needs nothing.
 for h in auth radarr sonarr lidarr bazarr sabnzbd torrent seerr tautulli \
          agregarr tunarr cleanuparr maintainerr profilarr titlecardmaker \
          audiobookshelf calibre romm minecraft convertx zipline sync \
-         search perplexica linkwarden; do
+         search perplexica linkwarden rancher; do
   echo -n "$h: "; curl -sIo /dev/null -w '%{http_code}\n' https://$h.thenewmans.casa
 done
 ```
@@ -312,6 +312,14 @@ Any 5xx/timeout: `kubectl -n traefik logs deploy/traefik` and the dashboard.
   `kubectl apply -k` the affected kustomization.
 - **Reset a botched cluster**: `/usr/local/bin/k3s-killall.sh` +
   `/usr/local/bin/k3s-uninstall.sh` per node, then redo Step 3.
+- **Rancher GUI**: deployed (2026-09-15) — `k8s/helm/rancher-values.yaml`
+  (v2.15.1, 1 replica, LE cert via Traefik annotations) plus cert-manager
+  (jetstack, required by the chart even with `ingress.tls.source=rancher`).
+  Access after edge cutover: https://rancher.thenewmans.casa. Until then:
+  `kubectl -n cattle-system port-forward svc/rancher 8443:443` ->
+  https://localhost:8443. First login uses the bootstrap password passed at
+  install (`--set bootstrapPassword=...`; recover via
+  `helm get values rancher -n cattle-system`).
 
 ## 11. Roadmap after this guide
 

@@ -40,3 +40,9 @@ Do not record transient tool failures or unverified guesses.
 **Root cause:** Split the create-order between two tools; the apply order in the runbook depended on a namespace only helm would make.
 **Prevention:** A kustomization with `namespace: X` may ship a single same-named Namespace object (the transformer no-ops on it); only multiple different namespaces in one kustomization collide. Prefer declaring the namespace in manifests over deferring to helm.
 **Verification:** `kubectl apply -k k8s/foundation` now creates namespace/traefik first; full §6 deploy succeeded on the live cluster.
+
+### [2026-09-15] Installed rancher helm chart without templating prerequisites first
+**Mistake:** Ran `helm install rancher` directly (skipped the helm-template-first rule) — hit three serial failures: chart requires cert-manager CRDs even with tls.source=rancher, values file was missing `hostname` (invalid empty Ingress TLS host), and the aborted installs left CRDs + a stale v1.ext.cattle.io APIService that kept cattle-system Terminating for minutes.
+**Root cause:** Chart's external prerequisites (CRDs, other controllers) are invisible to local kustomize checks and only surface at install time; aborted Rancher installs strand non-namespaced objects (CRDs/APIServices) that helm uninstall never removes.
+**Prevention:** For any new chart: `helm template` first (surfaces client-side kind resolution like missing Issuer CRDs), check chart kubeVersion against the cluster, and when an install fails partway expect to clean CRDs/APIServices + strip stuck finalizers before retrying.
+**Verification:** Fresh install after cleanup rolled out clean; rancher 1/1 Running, ingress registered, HTTPS 200 via port-forward.
