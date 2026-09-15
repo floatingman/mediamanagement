@@ -41,13 +41,11 @@ http:
       entryPoints: [websecure]
       service: k8s-edge
       tls: {certResolver: letsencrypt}
-    # DEFERRED: zipline stays down until the node CPU model exposes x86-64-v2
-    # (sharp module needs it). Add when zipline runs:
-    # zipline-k8s:
-    #   rule: Host(`zipline.thenewmans.casa`)
-    #   entryPoints: [websecure]
-    #   service: k8s-edge
-    #   tls: {certResolver: letsencrypt}
+    zipline-k8s:
+      rule: Host(`zipline.thenewmans.casa`)
+      entryPoints: [websecure]
+      service: k8s-edge
+      tls: {certResolver: letsencrypt}
     auth-k8s:
       rule: Host(`auth.thenewmans.casa`)
       entryPoints: [websecure]
