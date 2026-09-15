@@ -37,7 +37,8 @@ Everything here assumes the layout documented in this repo's `CLAUDE.md`
 
 ## 1. Prerequisites
 
-- 3 nodes, Ubuntu 22.04/24.04+, 2 GB+ RAM each, on the same LAN as the VM.
+- 3 nodes, Ubuntu 22.04/24.04+, 2 GB+ RAM and **120G+ disk** each (50G works
+  through Step 8; sizing analysis and Wave 2 growth in §12), same LAN as the VM.
 - **Static IPs** for all three nodes (DHCP reservations or static config).
   Etcd membership, the ingress node, and the edge all depend on stable IPs.
 - Unique hostnames (they become node names): e.g. `media-k8s-1/2/3`.
@@ -331,10 +332,64 @@ Any 5xx/timeout: `kubectl -n traefik logs deploy/traefik` and the dashboard.
 | Wave | Contents | Notes |
 |---|---|---|
 | 1 remainder | authelia (+valkey), nextdash, convertx, zipline | nextdash drops its temp 8084 port after migrating |
-| 2 | *arr stack in `media` ns | binds the pre-claimed NFS PVs; same-namespace DNS keeps `http://radarr:7878` URLs working |
+| 2 | *arr stack in `media` ns | prune + size nodes per §12 first; binds the pre-claimed NFS PVs; same-namespace DNS keeps `http://radarr:7878` URLs working |
 | 3 | sabnzbd; gluetun+qbittorrent pod; syncthing (relocate syncs to NFS) | verify gluetun iptables accepts the pod CIDR on 8181 |
 | 3b | romm (+mariadb) and calibre-web | unblocked: libraries mount from the `nfs-backups` PV (`/volume3/Backups`) instead of CIFS |
 | never | plex, tunarr, ollama, perplexica, searxng, mcsmanager | no GPUs on cluster nodes; mcsmanager needs docker.sock |
+
+## 12. Node storage sizing & Wave 2 prep
+
+Measured 2026-09-15. Node disks hold only appdata PVCs (local-path) + OS/k3s
+overhead + container images — media is on NFS and the GPU tier stays on the
+VM. Most of the raw appdata payload is regenerable cache:
+
+| Service | Raw | Real state | Notes |
+|---|---|---|---|
+| lidarr | 57G | ~6G | 47G MediaCover cache + 5G old DB backups |
+| titlecardmaker | 37G | ~35G | keep source + generated cards; trim logs |
+| romm | 29G | ~29G | resources cache — re-scraping hits quota-limited APIs; keep |
+| radarr | 14G | ~1.5G | 13G MediaCover cache |
+| linkwarden | 12G | ~1G | 11G orphaned archives (DB verified empty) |
+| everything else | ~7.5G | ~7.5G | sonarr, syncthing, agregarr, recyclarr, bazarr, tautulli, authelia, … |
+| **Total** | **~155G** | **~80G** | |
+
+Overhead per node: ~4G OS/k3s baseline now, ~10-12G per node after Waves 2-3
+images land (arr stack, romm, calibre+ebook-convert are 1-2G each).
+
+**Recommendation: 120G per node** (uniform; measured disks are 50G). Local-path
+PVCs are node-pinned, so size for worst-case per-node skew (~70G of state on
+one node), not the total. Migrating without the prune below: size ~160G/node
+instead. Cheaper alternative: one "stateful" node at ~200G (nodeSelector-pin
+the fat singletons) + two lean nodes at ~60G.
+
+Grow before Wave 2 binds PVCs (online, no reboot — verify partition layout
+with `lsblk` first; cloud images keep root on partition 3):
+
+```bash
+# Proxmox host, per VM:
+qm resize <vmid> scsi0 +70G
+# in-guest, per node:
+sudo growpart /dev/sda 3 && sudo resize2fs /dev/sda3
+```
+
+**Prune on the VM before migrating each service** (all cache/derived data —
+regenerated on next library scan):
+
+```bash
+sudo rm -rf appdata/lidarr/MediaCover/* appdata/radarr/MediaCover/*
+sudo bash -c 'cd appdata/lidarr/Backups && ls -t *.zip | tail -n +2 | xargs -r rm -f'
+sudo bash -c 'cd appdata/radarr/Backups && ls -t *.zip | tail -n +2 | xargs -r rm -f'
+sudo rm -rf appdata/titlecardmaker/logs/*
+sudo rm -rf appdata/linkwarden/data/*   # 11G orphaned archives, DB has zero links
+```
+
+The same 11G of linkwarden archives was copied into the `linkwarden-data`
+PVC on media-k8s-3 during the data cutover — clearing it there frees node
+disk too. Inspect first
+(`kubectl -n linkwarden exec deploy/linkwarden -- du -sh /data/data/*`),
+then clear the orphaned snapshot dir
+(`kubectl -n linkwarden exec deploy/linkwarden -- rm -rf /data/data/archives/*`);
+local-path is directory-backed, so deletes reclaim real space.
 
 ## Troubleshooting
 
