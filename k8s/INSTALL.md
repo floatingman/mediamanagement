@@ -268,12 +268,10 @@ reaches them by IP):
     ports:
       - "3002:3000"
 
-# compose/bookmarks.yaml -> nextdash  (TEMPORARY — until it migrates)
-    ports:
-      - "8084:8080"
 ```
 
-`docker compose up -d searxng perplexica nextdash` to apply.
+`docker compose up -d searxng perplexica` to apply.
+(nextdash migrated in wave 1 — no temporary port needed anymore.)
 
 **9b. Carry the certs over** (skip to re-issue from scratch):
 
@@ -331,7 +329,7 @@ Any 5xx/timeout: `kubectl -n traefik logs deploy/traefik` and the dashboard.
 
 | Wave | Contents | Notes |
 |---|---|---|
-| 1 remainder | authelia (+valkey), nextdash, convertx, zipline | nextdash drops its temp 8084 port after migrating |
+| 1 remainder | authelia (+valkey), nextdash, convertx — DONE 2026-09-15 (ns `auth`, `apps`) | zipline manifests + data migrated, pod blocked on node CPU model (needs x86-64-v2 → Proxmox CPU type `host` + rolling reboot), then uncomment the zipline router in traefik-dyn/transition.yaml |
 | 2 | *arr stack in `media` ns | prune + size nodes per §12 first; binds the pre-claimed NFS PVs; same-namespace DNS keeps `http://radarr:7878` URLs working |
 | 3 | sabnzbd; gluetun+qbittorrent pod; syncthing (relocate syncs to NFS) | verify gluetun iptables accepts the pod CIDR on 8181 |
 | 3b | romm (+mariadb) and calibre-web | unblocked: libraries mount from the `nfs-backups` PV (`/volume3/Backups`) instead of CIFS |
@@ -403,3 +401,7 @@ local-path is directory-backed, so deletes reclaim real space.
 | Pods stuck `ContainerCreating` on NFS PVCs | csi-driver-nfs not installed / node missing `nfs-common` |
 | linkwarden AI tagging fails | VM firewall must allow the cluster subnet to reach 192.168.0.9:11434 |
 | PVC `Pending` | `storageClassName: local-path` doesn't match your cluster's class (`kubectl get sc`) |
+| App crashes citing `AUTHELIA_*` env vars | k8s service-link injection collides with env-greedy apps — set `enableServiceLinks: false` (see k8s/auth/authelia.yaml) |
+| Node image crashes on `sharp`/`Unsupported CPU ... require v2 microarchitecture` | Proxmox VM CPU model is `qemu64`-class (no x86-64-v2). Set the VMs' CPU type to `host` in Proxmox (Hardware -> Processor) and reboot nodes ONE AT A TIME (etcd quorum). Known victim: zipline |
+| traefik upgrade leaves new pod `Pending` for minutes | hostPort 80/443 + RollingUpdate: old pod holds the ports. It self-resolves at the progress deadline; or `kubectl -n traefik delete pod <old>` to cut over immediately |
+| 502/404 on a just-migrated subdomain | a stale forward for it still exists in traefik-dyn/transition.yaml or the foundation ConfigMap — delete the old router (duplicate Host rules = undefined) |

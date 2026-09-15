@@ -1,0 +1,93 @@
+# ConvertX — env parity with compose/utilities.yaml (JWT_SECRET from the
+# generated secret; PUID/PGID/UMASK kept as env like compose).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: convertx
+  labels:
+    app: convertx
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: convertx
+  template:
+    metadata:
+      labels:
+        app: convertx
+    spec:
+      containers:
+        - name: convertx
+          image: ghcr.io/c4illin/convertx
+          ports:
+            - containerPort: 3000
+          env:
+            - name: TZ
+              value: America/Chicago
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1003"
+            - name: UMASK
+              value: "022"
+          envFrom:
+            - secretRef:
+                name: apps-env # uses JWT_SECRET
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: convertx
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: convertx
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi # conversion output accumulates
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: convertx
+spec:
+  selector:
+    app: convertx
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: convertx
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`convertx.thenewmans.casa`)
+      kind: Rule
+      services:
+        - name: convertx
+          port: 3000
+  tls:
+    certResolver: letsencrypt

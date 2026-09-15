@@ -1,0 +1,110 @@
+# Authelia — migrated from compose/auth.yaml. /config carries
+# configuration.yml (with ${VAR} placeholders satisfied by the envFrom
+# secret), users_database.yml, db.sqlite3. Files stay root-owned as under
+# compose (image default).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authelia
+  labels:
+    app: authelia
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: authelia
+  template:
+    metadata:
+      labels:
+        app: authelia
+    spec:
+      # Authelia parses ANY AUTHELIA_* env var as config; k8s service-link
+      # vars for the authelia-valkey Service (AUTHELIA_VALKEY_SERVICE_HOST,
+      # ...) collide with it. Kill the injection at the source.
+      enableServiceLinks: false
+      containers:
+        - name: authelia
+          image: authelia/authelia:latest
+          ports:
+            - containerPort: 9091
+          env:
+            - name: TZ
+              value: America/Chicago
+          envFrom:
+            - secretRef:
+                name: authelia-env
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 9091
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: authelia-config
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: authelia-config
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authelia
+spec:
+  selector:
+    app: authelia
+  ports:
+    - port: 9091
+      targetPort: 9091
+---
+# INTERIM (retire at §9): plain-HTTP LAN entrypoint for the Docker-VM edge's
+# forward-auth middleware and auth router. Avoids TLS/SNI complications of
+# proxying to the cluster edge for a per-request auth check.
+apiVersion: v1
+kind: Service
+metadata:
+  name: authelia-nodeport
+spec:
+  type: NodePort
+  selector:
+    app: authelia
+  ports:
+    - port: 9091
+      targetPort: 9091
+      nodePort: 30991
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: authelia
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`auth.thenewmans.casa`)
+      kind: Rule
+      services:
+        - name: authelia
+          port: 9091
+  tls:
+    certResolver: letsencrypt

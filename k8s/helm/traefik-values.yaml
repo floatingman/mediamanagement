@@ -38,7 +38,12 @@ ports:
 #   http://localhost:9000/dashboard/
 api:
   dashboard: true
-# ACME Cloudflare DNS-01 — same resolver settings as the docker Traefik flags.
+# The authelia Middleware CRD lives in the auth namespace; IngressRoutes in
+# other namespaces reference it (e.g. nextdash in apps).
+providers:
+  kubernetesCRD:
+    allowCrossNamespace: true
+
 # The ACME email arrives via Traefik's env<->flag mapping from the Secret
 # created by k8s/foundation (traefik-cloudflare).
 env:

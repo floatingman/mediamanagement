@@ -1,0 +1,176 @@
+# Zipline + postgres — env parity with compose/utilities.yaml. Service name
+# zipline-db preserved so DATABASE_URL carries over. uploads/public/themes
+# share one PVC via subPaths; pgdata gets its own with the postgres.yaml-style
+# subPath (initdb-safe).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zipline-db
+  labels:
+    app: zipline-db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: zipline-db
+  template:
+    metadata:
+      labels:
+        app: zipline-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: zipline
+            - name: POSTGRES_DB
+              value: zipline
+          envFrom:
+            - secretRef:
+                name: apps-env # uses POSTGRES_PASSWORD
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+              subPath: pgdata
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          livenessProbe:
+            exec:
+              command: [pg_isready, -U, zipline]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: zipline-pgdata
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zipline
+  labels:
+    app: zipline
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: zipline
+  template:
+    metadata:
+      labels:
+        app: zipline
+    spec:
+      containers:
+        - name: zipline
+          image: ghcr.io/diced/zipline:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: TZ
+              value: America/Chicago
+          envFrom:
+            - secretRef:
+                name: apps-env # uses DATABASE_URL + CORE_SECRET
+          volumeMounts:
+            - name: uploads
+              mountPath: /zipline/uploads
+              subPath: uploads
+            - name: public
+              mountPath: /zipline/public
+              subPath: public
+            - name: themes
+              mountPath: /zipline/themes
+              subPath: themes
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: zipline-data
+        - name: public
+          persistentVolumeClaim:
+            claimName: zipline-data
+        - name: themes
+          persistentVolumeClaim:
+            claimName: zipline-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zipline-pgdata
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zipline-data
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipline-db
+spec:
+  selector:
+    app: zipline-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipline
+spec:
+  selector:
+    app: zipline
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: zipline
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`zipline.thenewmans.casa`)
+      kind: Rule
+      services:
+        - name: zipline
+          port: 3000
+  tls:
+    certResolver: letsencrypt

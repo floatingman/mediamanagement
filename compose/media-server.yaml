@@ -117,7 +117,7 @@ services:
       - traefik.enable=true
       - traefik.http.services.tunarr.loadbalancer.server.port=8000
       - traefik.http.routers.tunarr.rule=Host(`tunarr.thenewmans.casa`)
-      - traefik.http.routers.tunarr.middlewares=authelia@docker
+      - traefik.http.routers.tunarr.middlewares=authelia@file # was authelia@docker until the wave-1 authelia migration
     volumes:
       # Lives on the fast local data disk (with the Plex store) — tunarr's ~11G of
       # DB + meilisearch index + image cache saturates the slow root virtual disk

@@ -1,0 +1,26 @@
+# Wave 1 remainder: nextdash, convertx, zipline (+postgres). Migrated from
+# compose/bookmarks.yaml (nextdash) and compose/utilities.yaml (convertx,
+# zipline). One namespace; one shared secret (each deployment ignores keys it
+# doesn't use — same pattern as the linkwarden stack).
+#
+#   kubectl apply -k k8s/apps
+#   k8s/scripts/migrate-pvc.sh --ns apps --pvc nextdash --src appdata/nextdash --deploy nextdash
+#   k8s/scripts/migrate-pvc.sh --ns apps --pvc convertx --src appdata/convertx --deploy convertx
+#   k8s/scripts/migrate-pvc.sh --ns apps --pvc zipline-pgdata --subpath pgdata \
+#       --src appdata/zipline/pgdata --deploy zipline-db --chown 70:70
+#   for d in uploads public themes; do k8s/scripts/migrate-pvc.sh --ns apps \
+#       --pvc zipline-data --subpath $d --src appdata/zipline/$d --deploy zipline; done
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: apps
+generatorOptions:
+  disableNameSuffixHash: true
+secretGenerator:
+  - name: apps-env
+    envs:
+      - env.txt
+resources:
+  - namespace.yaml
+  - nextdash.yaml
+  - convertx.yaml
+  - zipline.yaml

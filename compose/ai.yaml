@@ -31,7 +31,7 @@ services:
       - traefik.http.services.perplexica.loadbalancer.server.port=3000
       - traefik.http.routers.perplexica.rule=Host(`perplexica.thenewmans.casa`)
       # No built-in auth — gated by Authelia forward-auth, like tunarr/nextDash
-      - traefik.http.routers.perplexica.middlewares=authelia@docker
+      - traefik.http.routers.perplexica.middlewares=authelia@file # was authelia@docker until the wave-1 authelia migration
     volumes:
       - ../appdata/perplexica/data:/home/vane/data
     restart: unless-stopped

@@ -46,3 +46,9 @@ Do not record transient tool failures or unverified guesses.
 **Root cause:** Chart's external prerequisites (CRDs, other controllers) are invisible to local kustomize checks and only surface at install time; aborted Rancher installs strand non-namespaced objects (CRDs/APIServices) that helm uninstall never removes.
 **Prevention:** For any new chart: `helm template` first (surfaces client-side kind resolution like missing Issuer CRDs), check chart kubeVersion against the cluster, and when an install fails partway expect to clean CRDs/APIServices + strip stuck finalizers before retrying.
 **Verification:** Fresh install after cleanup rolled out clean; rancher 1/1 Running, ingress registered, HTTPS 200 via port-forward.
+
+### [2026-09-15] Wave-1 k8s gotchas: AUTHELIA_* service-link collision and stale transition routers
+**Mistake:** (1) Named the session store Service `authelia-valkey`; kubelet injects `AUTHELIA_VALKEY_SERVICE_HOST` etc. as env, and authelia parses ANY `AUTHELIA_*` env as config — fatal startup conflict. (2) Left convertx/auth/zipline routers in the k8s edge transition ConfigMap after their IngressRoutes went live — duplicate Host rules let the dead VM-forward win, producing 502/404s that looked like app failures.
+**Root cause:** (1) Kubernetes service-link env injection interacts with apps that claim broad env prefixes. (2) Violated the migration runbook's own rule (delete the VM-forward block the moment a service gets an IngressRoute) during a multi-service wave.
+**Prevention:** For env-greedy apps (authelia): `enableServiceLinks: false` in the pod spec, or avoid the prefix in service names. After each service cutover, immediately prune its router from BOTH edge configs and re-run the full subdomain sweep.
+**Verification:** enableServiceLinks=false rollout healthy (authelia 1/1, health 200); after ConfigMap prune, all 26 subdomains answer with expected codes and dash gates through the cluster authelia.

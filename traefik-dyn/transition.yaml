@@ -1,6 +1,7 @@
 # Interim edge forwards (pre-§9 cutover): hosts already living on the k8s
 # cluster but still fronted by the Docker-VM Traefik. Loaded via
-# --providers.file.directory=/dyn in compose/infrastructure.yaml.
+# --providers.file.directory=/dyn in compose/infrastructure.yaml (hot-reload
+# via --providers.file.watch=true).
 #
 # Retire this file (and the proxy service) when the router port-forwards for
 # 80/443 move to the cluster ingress node (192.168.0.19) — INSTALL.md §9.
@@ -11,6 +12,14 @@ http:
       # the backend URL below is the node IP, so name verification would fail.
       # The hop never leaves the LAN.
       insecureSkipVerify: true
+  middlewares:
+    authelia:
+      # Used by tunarr + perplexica labels (authelia@file) since wave 1.
+      # Plain-HTTP LAN hop to the k8s authelia NodePort — retires at §9.
+      forwardAuth:
+        address: http://192.168.0.19:30991/api/authz/forward-auth
+        trustForwardHeader: true
+        authResponseHeaders: [Remote-User, Remote-Groups, Remote-Name, Remote-Email]
   routers:
     linkwarden-k8s:
       rule: Host(`linkwarden.thenewmans.casa`)
@@ -22,8 +31,33 @@ http:
       entryPoints: [websecure]
       service: k8s-edge
       tls: {certResolver: letsencrypt}
+    dash-k8s:
+      rule: Host(`dash.thenewmans.casa`)
+      entryPoints: [websecure]
+      service: k8s-edge
+      tls: {certResolver: letsencrypt}
+    convertx-k8s:
+      rule: Host(`convertx.thenewmans.casa`)
+      entryPoints: [websecure]
+      service: k8s-edge
+      tls: {certResolver: letsencrypt}
+    # DEFERRED: zipline stays down until the node CPU model exposes x86-64-v2
+    # (sharp module needs it). Add when zipline runs:
+    # zipline-k8s:
+    #   rule: Host(`zipline.thenewmans.casa`)
+    #   entryPoints: [websecure]
+    #   service: k8s-edge
+    #   tls: {certResolver: letsencrypt}
+    auth-k8s:
+      rule: Host(`auth.thenewmans.casa`)
+      entryPoints: [websecure]
+      service: k8s-authelia
+      tls: {certResolver: letsencrypt}
   services:
     k8s-edge:
       loadBalancer:
         serversTransport: k8s-edge-transport
         servers: [{url: "https://192.168.0.19:443"}]
+    k8s-authelia:
+      loadBalancer:
+        servers: [{url: "http://192.168.0.19:30991"}]

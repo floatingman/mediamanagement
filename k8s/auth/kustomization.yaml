@@ -1,0 +1,27 @@
+# Wave 1: auth stack (authelia + valkey session store). Migrated from
+# compose/auth.yaml. Service names preserved (authelia, authelia-valkey) so
+# configuration.yml's `redis.host: authelia-valkey` carries over verbatim.
+#
+#   kubectl apply -k k8s/auth
+#   k8s/scripts/migrate-pvc.sh --ns auth --pvc authelia-config --src appdata/authelia \
+#       --exclude valkey --deploy authelia
+#   k8s/scripts/migrate-pvc.sh --ns auth --pvc authelia-valkey --src appdata/authelia/valkey \
+#       --deploy authelia-valkey
+#
+# The NodePort service (30991) is INTERIM: lets the Docker-VM Traefik's
+# forward-auth middleware reach authelia until the §9 edge cutover, when the
+# VM edge retires and authelia is reached in-cluster only.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: auth
+generatorOptions:
+  disableNameSuffixHash: true
+secretGenerator:
+  - name: authelia-env
+    envs:
+      - env.txt
+resources:
+  - namespace.yaml
+  - authelia.yaml
+  - valkey.yaml
+  - middleware.yaml

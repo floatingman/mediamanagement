@@ -1,0 +1,62 @@
+# Valkey session store for authelia (AOF persistence — sessions survive
+# restarts; the whole reason this exists). Name preserved from compose so
+# configuration.yml's redis host needs no edit.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authelia-valkey
+  labels:
+    app: authelia-valkey
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: authelia-valkey
+  template:
+    metadata:
+      labels:
+        app: authelia-valkey
+    spec:
+      containers:
+        - name: valkey
+          image: valkey/valkey:9-alpine
+          args: [valkey-server, --appendonly, "yes", --loglevel, warning]
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: authelia-valkey
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: authelia-valkey
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authelia-valkey
+spec:
+  selector:
+    app: authelia-valkey
+  ports:
+    - port: 6379
+      targetPort: 6379
