@@ -26,8 +26,8 @@ session:
     - name: 'authelia_session'
       domain: 'thenewmans.casa'
       authelia_url: 'https://auth.thenewmans.casa'
-      expiration: '12h'
-      inactivity: '45m'
+      expiration: '7d'
+      inactivity: '8h'
   redis:
     host: authelia-valkey
     port: 6379
