@@ -240,10 +240,15 @@ tagging on a new bookmark (ollama via the VM), check archived snapshots
 `compose/bookmarks.yaml`, remove the trio) — old data stays untouched at
 `appdata/linkwarden*` as a rollback copy until you're confident.
 
-Note: until the edge cutover (Step 9), `linkwarden.thenewmans.casa` still
-serves the OLD instance (VM Traefik routes to the stopped containers = it
-will be down). That's expected mid-migration; the k8s instance is reachable
-via port-forward meanwhile.
+Note: after stopping the compose trio the VM Traefik has no linkwarden backend
+and the subdomain 404s. The interim fix (deployed 2026-09-15): the VM edge
+loads `traefik-dyn/transition.yaml` (file provider added to the proxy service
+in compose/infrastructure.yaml) and forwards `linkwarden.` and `rancher.`
+to the cluster edge at https://192.168.0.19 — so both subdomains work
+immediately, before the full Step 9 cutover. The VM Traefik issues its own
+LE certs for them; first request after adding a host may stall ~10s during
+ACME. The file, the two provider args, and the `/dyn` volume mount all
+retire at cutover.
 
 ## 9. Edge cutover (when ready to serve everything from the cluster)
 

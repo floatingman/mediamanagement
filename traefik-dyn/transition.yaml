@@ -1,0 +1,29 @@
+# Interim edge forwards (pre-§9 cutover): hosts already living on the k8s
+# cluster but still fronted by the Docker-VM Traefik. Loaded via
+# --providers.file.directory=/dyn in compose/infrastructure.yaml.
+#
+# Retire this file (and the proxy service) when the router port-forwards for
+# 80/443 move to the cluster ingress node (192.168.0.19) — INSTALL.md §9.
+http:
+  serversTransports:
+    k8s-edge-transport:
+      # The backend cert is a valid Let's Encrypt cert for the Host name, but
+      # the backend URL below is the node IP, so name verification would fail.
+      # The hop never leaves the LAN.
+      insecureSkipVerify: true
+  routers:
+    linkwarden-k8s:
+      rule: Host(`linkwarden.thenewmans.casa`)
+      entryPoints: [websecure]
+      service: k8s-edge
+      tls: {certResolver: letsencrypt}
+    rancher-k8s:
+      rule: Host(`rancher.thenewmans.casa`)
+      entryPoints: [websecure]
+      service: k8s-edge
+      tls: {certResolver: letsencrypt}
+  services:
+    k8s-edge:
+      loadBalancer:
+        serversTransport: k8s-edge-transport
+        servers: [{url: "https://192.168.0.19:443"}]
