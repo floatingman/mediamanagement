@@ -1,0 +1,91 @@
+# Linkwarden app. Env parity with compose/bookmarks.yaml: MEILI_HOST literal
+# here, everything else via the generated `linkwarden` Secret. The Ollama
+# endpoint points at the Docker VM permanently — ollama is GPU-bound and the
+# cluster nodes have no NVIDIA GPUs, so it never migrates (linkwarden's AI
+# tagging keeps working across the migration).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkwarden
+  labels:
+    app: linkwarden
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: linkwarden
+  template:
+    metadata:
+      labels:
+        app: linkwarden
+    spec:
+      containers:
+        - name: linkwarden
+          image: ghcr.io/linkwarden/linkwarden:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: MEILI_HOST
+              value: http://linkwarden-search:7700
+          envFrom:
+            - secretRef:
+                name: linkwarden
+          volumeMounts:
+            - name: data
+              mountPath: /data/data # 12G of archived link snapshots today
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: linkwarden-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: linkwarden-data
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi # 12G used today
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: linkwarden
+spec:
+  selector:
+    app: linkwarden
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+# Same host + same Let's Encrypt DNS-01 resolver as the compose Traefik labels.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: linkwarden
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`linkwarden.thenewmans.casa`)
+      kind: Rule
+      services:
+        - name: linkwarden
+          port: 3000
+  tls:
+    certResolver: letsencrypt

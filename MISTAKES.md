@@ -28,3 +28,9 @@ Do not record transient tool failures or unverified guesses.
 **Root cause:** The path is a symlink into the chezmoi source tree (`files/omp/agent/config.yml`); writes follow it, and the `0B` listing was the link's display size, not the target's.
 **Prevention:** Before any home-dir config write, `ls -la`/`readlink -f` the path and check `chezmoi managed`. Never assume a 0-byte listing means empty regular file.
 **Verification:** `git diff HEAD~2 HEAD -- files/omp/agent/config.yml` shows only the intended +3 lines; `omp config get modelRoles` returns all three roles.
+
+### [2026-09-15] Unvalidated k8s YAML/manifests shipped half-checked
+**Mistake:** Wrote traefik dynamic-config flow mappings as `titlecardmaker:{rule: ...}` (no space after the colon, so YAML parsed `titlecardmaker:{rule` as the key), and guessed helm values keys (`ports.web.redirections`, `extraVolumes`) that the current chart schema rejects.
+**Root cause:** Embedded YAML inside ConfigMaps and helm chart schemas were never parsed against a real consumer — eyeballing flow-style YAML hides key errors, and chart values keys move between chart versions.
+**Prevention:** For every k8s scaffold: `kubectl kustomize` the overlays, yaml-parse any ConfigMap-embedded config, and `helm template` with the exact values file BEFORE calling it done.
+**Verification:** kustomize renders clean, pyyaml round-trips external-services.yml (22 routers ↔ 22 services), helm template succeeds against traefik chart 41.5.0 and csi-driver-nfs with the shipped values.

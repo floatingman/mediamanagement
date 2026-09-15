@@ -1,0 +1,71 @@
+# postgres:16-alpine — same image as compose/bookmarks.yaml linkwarden-db.
+# Alpine variant runs postgres as uid/gid 70 and self-chowns PGDATA on start.
+# subPath: pgdata keeps initdb clear of lost+found on fresh local-path volumes;
+# the data-migration script copies appdata/linkwarden/pgdata into that subpath.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkwarden-db
+  labels:
+    app: linkwarden-db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # RWO PVC — never allow two writers during rollout
+  selector:
+    matchLabels:
+      app: linkwarden-db
+  template:
+    metadata:
+      labels:
+        app: linkwarden-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: linkwarden # uses POSTGRES_PASSWORD; extra keys ignored
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+              subPath: pgdata
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          livenessProbe:
+            exec:
+              command: [pg_isready, -U, postgres]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: linkwarden-pgdata
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: linkwarden-pgdata
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path # k3s default; adjust to your cluster's class
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: linkwarden-db # same name as the compose service — DATABASE_URL carries over
+spec:
+  selector:
+    app: linkwarden-db
+  ports:
+    - port: 5432
+      targetPort: 5432

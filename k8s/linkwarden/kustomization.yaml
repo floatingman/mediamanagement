@@ -1,0 +1,29 @@
+# Wave 1 proving-ground stack. Apply AFTER the Traefik helm release (the
+# IngressRoute uses its CRD) and after k8s/scripts/gen-env.sh has produced
+# env.txt:
+#
+#   kubectl apply -k k8s/linkwarden
+#
+# Service names deliberately match the docker-compose service names
+# (linkwarden-db, linkwarden-search, linkwarden) so DATABASE_URL / MEILI_HOST
+# values carry over from the compose stack verbatim.
+#
+# DATA CUTOVER from the Docker VM (copies appdata/linkwarden/* into the
+# PVCs, scales deployments to zero while copying):
+#
+#   k8s/scripts/linkwarden-migrate-data.sh          # dry run
+#   k8s/scripts/linkwarden-migrate-data.sh --execute
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: linkwarden
+generatorOptions:
+  disableNameSuffixHash: true
+secretGenerator:
+  - name: linkwarden
+    envs:
+      - env.txt
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - meilisearch.yaml
+  - linkwarden.yaml

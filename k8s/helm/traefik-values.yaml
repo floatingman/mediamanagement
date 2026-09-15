@@ -1,0 +1,78 @@
+# Traefik v3 helm release — k8s replacement for the Docker-VM edge.
+#
+# Ports 80/443 are hostPorts pinned to ONE node (single entry node, same
+# topology as today's single VM). Label it before installing:
+#   kubectl label node <node> newman.media/ingress=true
+# For a multi-node edge later: install MetalLB, drop the hostPort entries
+# and set service.type: LoadBalancer instead.
+deployment:
+  kind: Deployment
+  replicas: 1
+nodeSelector:
+  newman.media/ingress: "true"
+service:
+  type: ClusterIP
+ports:
+  web:
+    port: 8000
+    hostPort: 80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    port: 8443
+    hostPort: 443
+    http:
+      tls:
+        enabled: true
+        # default certResolver for every websecure router (parity with the
+        # docker labels, which set it per-router)
+        certResolver: letsencrypt
+  traefik:
+    port: 9000
+# Dashboard: NOT exposed (hardening — the docker edge published :8080 wide
+# open). Reach it ad hoc with:
+#   kubectl -n traefik port-forward deploy/traefik 9000:9000
+#   http://localhost:9000/dashboard/
+api:
+  dashboard: true
+# ACME Cloudflare DNS-01 — same resolver settings as the docker Traefik flags.
+# The ACME email arrives via Traefik's env<->flag mapping from the Secret
+# created by k8s/foundation (traefik-cloudflare).
+env:
+  - name: CF_DNS_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: traefik-cloudflare
+        key: CF_DNS_API_TOKEN
+  - name: TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL
+    valueFrom:
+      secretKeyRef:
+        name: traefik-cloudflare
+        key: ACME_EMAIL
+additionalArguments:
+  - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+  - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+  - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+  - --certificatesresolvers.letsencrypt.acme.storage=/data/acme.json
+  - --providers.file.directory=/etc/traefik/dynamic
+  - --providers.file.watch=true
+# acme.json lives on a PVC. Cert continuity: copy the existing VM cert store
+# in after first install (skip to re-issue from scratch):
+#   kubectl -n traefik cp ../letsencrypt/acme.json deploy/traefik:/data/ --no-preserve
+#   kubectl -n traefik exec deploy/traefik -- chmod 600 /data/acme.json
+#   kubectl -n traefik rollout restart deploy/traefik
+persistence:
+  enabled: true
+  storageClass: local-path # k3s default; adjust to your cluster's class
+  accessModes: [ReadWriteOnce]
+  size: 1Gi
+# Transition routing: subdomains still served by the Docker VM, plus the
+# authelia-vm forward-auth middleware (k8s/foundation/…-services.yaml
+# ConfigMap, which MUST be applied before the helm release).
+volumes:
+  - name: traefik-external-services
+    mountPath: /etc/traefik/dynamic
+    type: configMap

@@ -1,0 +1,97 @@
+# Static NFS PVs mirroring the Docker VM's /etc/fstab mounts (NFSv3 options
+# kept identical). Each PV is pre-claimed by a same-named PVC that Wave 2
+# will create in namespace `media` — nothing binds until then, and claimRef
+# guarantees 1:1 binding when it does.
+#
+# Mount-path parity is the whole point: Wave 2 pods mount these at the same
+# in-container paths the compose services see today, so the *arr SQLite DBs
+# (which store absolute paths) need zero remapping.
+#
+# Export ACLs verified 2026-09-15 via `showmount -e`: both NAS boxes export
+# to the whole 192.168.0.0/24, so cluster nodes are already permitted. If
+# mounts ever fail with "access denied by server while mounting", re-check
+# the exports (Unraid: Shares -> NFS; Synology: Control Panel -> File
+# Services -> NFS) — that's the only thing that error means.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-ratchetmedia # Unraid: movies/TV/downloads staging
+spec:
+  capacity:
+    storage: 40Ti # advisory — static PVs are not quota'd
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: "" # static: never dynamically re-provisioned
+  claimRef:
+    name: nfs-ratchetmedia
+    namespace: media
+  mountOptions: [vers=3, hard, noatime, rsize=1048576, wsize=1048576, timeo=100, retrans=3]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: 192.168.0.5-mnt-user-Media
+    volumeAttributes:
+      server: 192.168.0.5
+      share: /mnt/user/Media
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-perceptormedia # Synology volume1: primary Movies/TV libraries
+spec:
+  capacity:
+    storage: 40Ti
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    name: nfs-perceptormedia
+    namespace: media
+  mountOptions: [vers=3, hard, noatime, rsize=1048576, wsize=1048576, timeo=100, retrans=3]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: 192.168.0.6-volume1-Media
+    volumeAttributes:
+      server: 192.168.0.6
+      share: /volume1/Media
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-perceptormediaexpansion # Synology volume3: music/audiobooks
+spec:
+  capacity:
+    storage: 40Ti
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    name: nfs-perceptormediaexpansion
+    namespace: media
+  mountOptions: [vers=3, hard, noatime, rsize=1048576, wsize=1048576, timeo=100, retrans=3]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: 192.168.0.6-volume3-MediaExpansion
+    volumeAttributes:
+      server: 192.168.0.6
+      share: /volume3/MediaExpansion
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-backups # Synology volume3: Books (calibre-web) + Games/Roms (romm)
+spec:
+  capacity:
+    storage: 40Ti
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    name: nfs-backups
+    namespace: media
+  mountOptions: [vers=3, hard, noatime, rsize=1048576, wsize=1048576, timeo=100, retrans=3]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: 192.168.0.6-volume3-Backups
+    volumeAttributes:
+      server: 192.168.0.6
+      share: /volume3/Backups

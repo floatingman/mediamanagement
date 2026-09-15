@@ -1,0 +1,99 @@
+# Edge-transition config: routes subdomains of services still running on the
+# Docker VM (192.168.0.9) so *.thenewmans.casa keeps working after the k8s
+# Traefik takes over ports 80/443. Mounted into the Traefik pod by the
+# k8s/helm/traefik-values.yaml file provider.
+#
+# CUTOVER RUNBOOK (one-time, when ready to move the edge):
+#   1. Label the ingress node:
+#        kubectl label node <node> newman.media/ingress=true
+#   2. Apply foundation + install both helm releases (order in
+#      kustomization.yaml header).
+#   3. These services have NO published host port today (Traefik-only
+#      internal) and need host ports for the k8s edge to reach them:
+#        searxng:    ports: ["8082:8080"]   (compose/utilities.yaml) — PERMANENT
+#        perplexica: ports: ["3002:3000"]   (compose/ai.yaml)        — PERMANENT
+#        nextdash:   ports: ["8084:8080"]   (compose/bookmarks.yaml) — temporary,
+#                                                                     remove when it migrates
+#      searxng + perplexica never migrate: they are GPU-bound via ollama and
+#      the cluster nodes have no NVIDIA GPUs. Their routers below are already
+#      active; nextdash's stays commented until its port exists.
+#   4. Stop the old edge:
+#        docker compose stop proxy
+#   5. Move router port-forwards 80/443 from 192.168.0.9 to the ingress node
+#      IP. Same LAN / same public IP, so cloudflare-ddns needs no change.
+#      (Keep 32400/tcp -> 192.168.0.9 for Plex.)
+#   6. As each service migrates to k8s, delete its router AND service blocks
+#      below; its IngressRoute takes over. Never keep both — duplicate Host
+#      rules make routing undefined.
+#
+# Forward-auth middleware pointing at the still-on-Docker Authelia. Reused by
+# any migrated IngressRoute that needs a login gate until Authelia itself
+# moves (reference as authelia-vm@file).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-external-services
+  namespace: traefik
+data:
+  external-services.yml: |
+    http:
+      middlewares:
+        authelia-vm:
+          forwardAuth:
+            address: http://192.168.0.9:9091/api/authz/forward-auth
+            authResponseHeaders: [Remote-User, Remote-Groups, Remote-Name, Remote-Email]
+      routers:
+        auth:          {rule: Host(`auth.thenewmans.casa`),          entryPoints: [websecure], service: vm-auth,          tls: {certResolver: letsencrypt}}
+        radarr:        {rule: Host(`radarr.thenewmans.casa`),        entryPoints: [websecure], service: vm-radarr,        tls: {certResolver: letsencrypt}}
+        sonarr:        {rule: Host(`sonarr.thenewmans.casa`),        entryPoints: [websecure], service: vm-sonarr,        tls: {certResolver: letsencrypt}}
+        lidarr:        {rule: Host(`lidarr.thenewmans.casa`),        entryPoints: [websecure], service: vm-lidarr,        tls: {certResolver: letsencrypt}}
+        bazarr:        {rule: Host(`bazarr.thenewmans.casa`),        entryPoints: [websecure], service: vm-bazarr,        tls: {certResolver: letsencrypt}}
+        sabnzbd:       {rule: Host(`sabnzbd.thenewmans.casa`),       entryPoints: [websecure], service: vm-sabnzbd,       tls: {certResolver: letsencrypt}}
+        torrent:       {rule: Host(`torrent.thenewmans.casa`),       entryPoints: [websecure], service: vm-torrent,       tls: {certResolver: letsencrypt}}
+        seerr:         {rule: Host(`seerr.thenewmans.casa`),         entryPoints: [websecure], service: vm-seerr,         tls: {certResolver: letsencrypt}}
+        tautulli:      {rule: Host(`tautulli.thenewmans.casa`),      entryPoints: [websecure], service: vm-tautulli,      tls: {certResolver: letsencrypt}}
+        agregarr:      {rule: Host(`agregarr.thenewmans.casa`),      entryPoints: [websecure], service: vm-agregarr,      tls: {certResolver: letsencrypt}}
+        tunarr:        {rule: Host(`tunarr.thenewmans.casa`),        entryPoints: [websecure], service: vm-tunarr,        tls: {certResolver: letsencrypt}, middlewares: [authelia-vm]}
+        cleanuparr:    {rule: Host(`cleanuparr.thenewmans.casa`),    entryPoints: [websecure], service: vm-cleanuparr,    tls: {certResolver: letsencrypt}}
+        maintainerr:   {rule: Host(`maintainerr.thenewmans.casa`),   entryPoints: [websecure], service: vm-maintainerr,   tls: {certResolver: letsencrypt}}
+        profilarr:     {rule: Host(`profilarr.thenewmans.casa`),     entryPoints: [websecure], service: vm-profilarr,     tls: {certResolver: letsencrypt}}
+        titlecardmaker: {rule: Host(`titlecardmaker.thenewmans.casa`), entryPoints: [websecure], service: vm-titlecardmaker, tls: {certResolver: letsencrypt}}
+        audiobookshelf: {rule: Host(`audiobookshelf.thenewmans.casa`), entryPoints: [websecure], service: vm-audiobookshelf, tls: {certResolver: letsencrypt}}
+        calibre:       {rule: Host(`calibre.thenewmans.casa`),       entryPoints: [websecure], service: vm-calibre,       tls: {certResolver: letsencrypt}}
+        romm:          {rule: Host(`romm.thenewmans.casa`),          entryPoints: [websecure], service: vm-romm,          tls: {certResolver: letsencrypt}}
+        minecraft:     {rule: Host(`minecraft.thenewmans.casa`),     entryPoints: [websecure], service: vm-minecraft,     tls: {certResolver: letsencrypt}}
+        convertx:      {rule: Host(`convertx.thenewmans.casa`),      entryPoints: [websecure], service: vm-convertx,      tls: {certResolver: letsencrypt}}
+        zipline:       {rule: Host(`zipline.thenewmans.casa`),       entryPoints: [websecure], service: vm-zipline,       tls: {certResolver: letsencrypt}}
+        sync:          {rule: Host(`sync.thenewmans.casa`),          entryPoints: [websecure], service: vm-sync,          tls: {certResolver: letsencrypt}}
+        # --- Permanent VM residents (GPU-bound: search/perplexica serve
+        # --- perplexica's ollama dependency; tunarr above likewise) ---
+        search:         {rule: Host(`search.thenewmans.casa`),         entryPoints: [websecure], service: vm-search,         tls: {certResolver: letsencrypt}}
+        perplexica:     {rule: Host(`perplexica.thenewmans.casa`),     entryPoints: [websecure], service: vm-perplexica,     tls: {certResolver: letsencrypt}, middlewares: [authelia-vm]}
+        # --- Temporary: needs the 8084 host port above until it migrates ---
+        # dash:       {rule: Host(`dash.thenewmans.casa`),       entryPoints: [websecure], service: vm-dash,       tls: {certResolver: letsencrypt}, middlewares: [authelia-vm]}
+      services:
+        vm-auth:           {loadBalancer: {servers: [{url: "http://192.168.0.9:9091"}]}}
+        vm-radarr:         {loadBalancer: {servers: [{url: "http://192.168.0.9:7878"}]}}
+        vm-sonarr:         {loadBalancer: {servers: [{url: "http://192.168.0.9:8989"}]}}
+        vm-lidarr:         {loadBalancer: {servers: [{url: "http://192.168.0.9:8686"}]}}
+        vm-bazarr:         {loadBalancer: {servers: [{url: "http://192.168.0.9:6767"}]}}
+        vm-sabnzbd:        {loadBalancer: {servers: [{url: "http://192.168.0.9:8081"}]}}
+        vm-torrent:        {loadBalancer: {servers: [{url: "http://192.168.0.9:8181"}]}}
+        vm-seerr:          {loadBalancer: {servers: [{url: "http://192.168.0.9:5055"}]}}
+        vm-tautulli:       {loadBalancer: {servers: [{url: "http://192.168.0.9:8182"}]}}
+        vm-agregarr:       {loadBalancer: {servers: [{url: "http://192.168.0.9:7171"}]}}
+        vm-tunarr:         {loadBalancer: {servers: [{url: "http://192.168.0.9:8000"}]}}
+        vm-cleanuparr:     {loadBalancer: {servers: [{url: "http://192.168.0.9:11011"}]}}
+        vm-maintainerr:    {loadBalancer: {servers: [{url: "http://192.168.0.9:6246"}]}}
+        vm-profilarr:      {loadBalancer: {servers: [{url: "http://192.168.0.9:6868"}]}}
+        vm-titlecardmaker: {loadBalancer: {servers: [{url: "http://192.168.0.9:4242"}]}}
+        vm-audiobookshelf: {loadBalancer: {servers: [{url: "http://192.168.0.9:13378"}]}}
+        vm-calibre:        {loadBalancer: {servers: [{url: "http://192.168.0.9:8083"}]}}
+        vm-romm:           {loadBalancer: {servers: [{url: "http://192.168.0.9:8090"}]}}
+        vm-minecraft:      {loadBalancer: {servers: [{url: "http://192.168.0.9:23333"}]}}
+        vm-convertx:       {loadBalancer: {servers: [{url: "http://192.168.0.9:3000"}]}}
+        vm-zipline:        {loadBalancer: {servers: [{url: "http://192.168.0.9:3001"}]}}
+        vm-sync:           {loadBalancer: {servers: [{url: "http://192.168.0.9:8384"}]}}
+        vm-search:         {loadBalancer: {servers: [{url: "http://192.168.0.9:8082"}]}}
+        # vm-dash:         {loadBalancer: {servers: [{url: "http://192.168.0.9:8084"}]}}
+        vm-perplexica:     {loadBalancer: {servers: [{url: "http://192.168.0.9:3002"}]}}

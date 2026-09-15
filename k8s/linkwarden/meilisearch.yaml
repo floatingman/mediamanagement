@@ -1,0 +1,69 @@
+# Meilisearch pinned to the compose stack's version (v1.12.8). Image runs as
+# uid 1000; the data-migration script chowns the copied files accordingly.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkwarden-search
+  labels:
+    app: linkwarden-search
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: linkwarden-search
+  template:
+    metadata:
+      labels:
+        app: linkwarden-search
+    spec:
+      containers:
+        - name: meilisearch
+          image: getmeili/meilisearch:v1.12.8
+          ports:
+            - containerPort: 7700
+          envFrom:
+            - secretRef:
+                name: linkwarden # uses MEILI_MASTER_KEY; extra keys ignored
+          volumeMounts:
+            - name: meili
+              mountPath: /meili_data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: meili
+          persistentVolumeClaim:
+            claimName: linkwarden-meili
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: linkwarden-meili
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi # current index is <1G
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: linkwarden-search # same name as the compose service — MEILI_HOST carries over
+spec:
+  selector:
+    app: linkwarden-search
+  ports:
+    - port: 7700
+      targetPort: 7700

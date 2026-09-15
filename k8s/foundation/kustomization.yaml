@@ -1,0 +1,28 @@
+# Wave 0 foundation.
+#
+# APPLY ORDER (foundation first — the Traefik chart mounts the ConfigMap and
+# reads the Secret created here; --create-namespace makes the traefik ns):
+#
+#   1. kubectl apply -k k8s/foundation
+#   2. helm repo add traefik https://traefik.github.io/charts
+#      helm install traefik traefik/traefik -n traefik --create-namespace -f k8s/helm/traefik-values.yaml
+#   3. helm repo add csi-driver-nfs https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
+#      helm install csi-driver-nfs csi-driver-nfs/csi-driver-nfs -n kube-system -f k8s/helm/csi-nfs-values.yaml
+#
+# Secrets come from env.txt (gitignored). Generate it from the repo .env:
+#   k8s/scripts/gen-env.sh
+#
+# The `media` namespace (NFS PVC consumers) is created by the Wave 2
+# kustomization when the *arr stack migrates — nothing here needs it yet.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: traefik
+generatorOptions:
+  disableNameSuffixHash: true # stable names — helm values reference these
+secretGenerator:
+  - name: traefik-cloudflare
+    envs:
+      - env.txt
+resources:
+  - traefik-external-services.yaml
+  - nfs-volumes.yaml

@@ -1,0 +1,5 @@
+# NFS CSI driver — serves the static PVs in k8s/foundation/nfs-volumes.yaml.
+# Node pods (daemonset) run on every node; one controller replica is plenty
+# for a homelab.
+controller:
+  replicas: 1
