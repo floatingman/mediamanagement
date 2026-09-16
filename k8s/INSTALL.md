@@ -245,7 +245,7 @@ Note: after stopping the compose trio the VM Traefik has no linkwarden backend
 and the subdomain 404s. The interim fix (deployed 2026-09-15): the VM edge
 loads `traefik-dyn/transition.yaml` (file provider added to the proxy service
 in compose/infrastructure.yaml) and forwards every migrated subdomain
-(linkwarden, auth, dash, convertx, zipline, headlamp)
+(linkwarden, auth, dash, convertx, zipline)
 to the cluster edge at https://192.168.0.19 — so they all work
 immediately, before the full Step 9 cutover. The VM Traefik issues its own
 LE certs for them; first request after adding a host may stall ~10s during
@@ -298,7 +298,7 @@ Public IP is unchanged, so cloudflare-ddns needs nothing.
 for h in auth radarr sonarr lidarr bazarr sabnzbd torrent seerr tautulli \
          agregarr tunarr cleanuparr maintainerr profilarr titlecardmaker \
          audiobookshelf calibre romm minecraft convertx zipline sync \
-         search perplexica linkwarden headlamp rancher; do
+         search perplexica linkwarden rancher; do
   echo -n "$h: "; curl -sIo /dev/null -w '%{http_code}\n' https://$h.thenewmans.casa
 done
 ```

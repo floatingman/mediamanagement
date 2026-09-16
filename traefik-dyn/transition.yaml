@@ -46,11 +46,6 @@ http:
       entryPoints: [websecure]
       service: k8s-edge
       tls: {certResolver: letsencrypt}
-    headlamp-k8s:
-      rule: Host(`headlamp.thenewmans.casa`)
-      entryPoints: [websecure]
-      service: k8s-edge
-      tls: {certResolver: letsencrypt}
     auth-k8s:
       rule: Host(`auth.thenewmans.casa`)
       entryPoints: [websecure]
