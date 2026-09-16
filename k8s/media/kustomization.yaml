@@ -19,10 +19,12 @@ secretGenerator:
   - name: media-env
     envs:
       - env.txt
+configMapGenerator:
+  - name: torrent-port-sync
+    files: [port-sync.sh]
 resources:
   - namespace.yaml
   - nfs-pvcs.yaml
-  - vm-backends.yaml
   - sonarr.yaml
   - lidarr.yaml
   - bazarr.yaml
@@ -35,3 +37,6 @@ resources:
   - maintainerr.yaml
   - audiobookshelf.yaml
   - recyclarr.yaml
+  - sabnzbd.yaml
+  - torrent.yaml
+  - syncthing.yaml

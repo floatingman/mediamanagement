@@ -1,0 +1,121 @@
+# qBittorrent through the VPN — ONE pod, two containers sharing the network
+# namespace (the k8s-native version of compose's network_mode: service:vpn).
+#
+# - gluetun: NET_ADMIN + host /dev/net/tun, userspace wireguard (kernel wg
+#   wedged restarts on the old LXC setup; same choice here). NAT-PMP port
+#   forwarding stays on. FIREWALL_INPUT_PORTS opens the WebUI port so the
+#   cluster ingress (pod CIDR) can reach 8181 through gluetun's iptables.
+# - qbittorrent: GSP mod auto-syncs gluetun's forwarded port to the listening
+#   port via the localhost control API (needs WebUI "bypass auth for
+#   localhost" — carried over in the migrated config).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: torrent
+  labels: {app: torrent}
+spec:
+  replicas: 1
+  strategy: {type: Recreate} # never two pods fighting over the VPN identity
+  selector: {matchLabels: {app: torrent}}
+  template:
+    metadata:
+      labels: {app: torrent}
+    spec:
+      containers:
+        - name: gluetun
+          image: qmcgaw/gluetun
+          securityContext:
+            capabilities:
+              add: [NET_ADMIN]
+          env:
+            - {name: VPN_SERVICE_PROVIDER, value: protonvpn}
+            - {name: VPN_TYPE, value: wireguard}
+            - {name: WIREGUARD_IMPLEMENTATION, value: userspace}
+            - {name: WIREGUARD_PRIVATE_KEY, valueFrom: {secretKeyRef: {name: media-env, key: PROTONVPN_WIREGUARD_PRIVATE_KEY}}}
+            - {name: SERVER_CITIES, value: Chicago}
+            - {name: VPN_PORT_FORWARDING, value: "on"}
+            - {name: VPN_PORT_FORWARDING_PROVIDER, value: protonvpn}
+            - {name: FIREWALL_INPUT_PORTS, value: "8181"}
+            - {name: TZ, value: America/Chicago}
+          volumeMounts:
+            - {name: gluetun, mountPath: /gluetun}
+            - {name: tun, mountPath: /dev/net/tun}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 256Mi}
+        - name: qbittorrent
+          image: ghcr.io/linuxserver/qbittorrent
+          ports: [{containerPort: 8181}]
+          env:
+            - {name: PUID, value: "1000"}
+            - {name: PGID, value: "1003"}
+            - {name: TZ, value: America/Chicago}
+            - {name: WEBUI_PORT, value: "8181"}
+          volumeMounts:
+            - {name: config, mountPath: /config}
+            - {name: rm, mountPath: /downloads, subPath: Downloads/torrents}
+            - {name: rm, mountPath: /watch, subPath: Syncs/torrent}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {memory: 2Gi}
+        - name: port-sync
+          # Replaces the t-anc GSP docker mod (its ghcr fetch returns an
+          # invalid tarball): poll gluetun's forwarded port, push it to
+          # qBittorrent's listen port via the localhost-bypass WebUI API.
+          # Reads the API key from gluetun's own auth config.
+          image: curlimages/curl:8.11.1
+          command: [sh, /scripts/port-sync.sh]
+          volumeMounts:
+            - {name: port-sync, mountPath: /scripts, readOnly: true}
+            - {name: gluetun, mountPath: /gluetun-ro, readOnly: true}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {memory: 64Mi}
+      volumes:
+        - name: port-sync
+          configMap:
+            name: torrent-port-sync
+            defaultMode: 0755
+        - name: gluetun
+          persistentVolumeClaim: {claimName: gluetun-config}
+        - name: config
+          persistentVolumeClaim: {claimName: torrent-config}
+        - name: rm
+          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+        - name: tun
+          hostPath: {path: /dev/net/tun}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: gluetun-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 1Gi}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: torrent-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: torrent # same name the *arr clients already use
+spec:
+  selector: {app: torrent}
+  ports: [{port: 8181, targetPort: 8181}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: torrent}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`torrent.thenewmans.casa`)
+      kind: Rule
+      services: [{name: torrent, port: 8181}]
+  tls: {certResolver: letsencrypt}

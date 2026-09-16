@@ -1,0 +1,67 @@
+# sabnzbd — replaces the vm-backends stub Service of the same name (the *arr
+# download-client URLs never change). Watch folder now on NFS (Syncs/nzb),
+# fed by the in-cluster syncthing.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sabnzbd
+  labels: {app: sabnzbd}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: sabnzbd}}
+  template:
+    metadata:
+      labels: {app: sabnzbd}
+    spec:
+      containers:
+        - name: sabnzbd
+          image: ghcr.io/linuxserver/sabnzbd
+          ports: [{containerPort: 8080}]
+          env:
+            - {name: PUID, value: "1000"}
+            - {name: PGID, value: "1003"}
+            - {name: TZ, value: America/Chicago}
+          volumeMounts:
+            - {name: config, mountPath: /config}
+            - {name: rm, mountPath: /downloads, subPath: Downloads}
+            - {name: rm, mountPath: /watch, subPath: Syncs/nzb}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {memory: 2Gi}
+          readinessProbe:
+            tcpSocket: {port: 8080}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: sabnzbd-config}
+        - name: rm
+          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: sabnzbd-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 5Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sabnzbd # same name the *arr clients already use
+spec:
+  selector: {app: sabnzbd}
+  ports: [{port: 8080, targetPort: 8080}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: sabnzbd}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`sabnzbd.thenewmans.casa`)
+      kind: Rule
+      services: [{name: sabnzbd, port: 8080}]
+  tls: {certResolver: letsencrypt}

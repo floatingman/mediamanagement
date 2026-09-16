@@ -64,6 +64,9 @@ http:
     cleanuparr-k8s:    {rule: Host(`cleanuparr.thenewmans.casa`),    entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
     maintainerr-k8s:   {rule: Host(`maintainerr.thenewmans.casa`),   entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
     audiobookshelf-k8s: {rule: Host(`audiobookshelf.thenewmans.casa`), entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    sabnzbd-k8s:       {rule: Host(`sabnzbd.thenewmans.casa`),       entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    torrent-k8s:       {rule: Host(`torrent.thenewmans.casa`),       entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    sync-k8s:          {rule: Host(`sync.thenewmans.casa`),          entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
   services:
     k8s-edge:
       loadBalancer:

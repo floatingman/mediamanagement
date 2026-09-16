@@ -1,0 +1,84 @@
+# Syncthing — synced folders relocated to NFS (rm share, Syncs/ dir; config
+# + index DB stay on local-path for integrity). Device identity migrates with
+# the config, so paired phones/laptops keep working unchanged.
+#
+# hostPorts preserve the exact listener ports: devices keep announcing and
+# dialing the same public IP:22000. Pinned to one node — move the router
+# port-forwards 22000/tcp+udp and 21027/udp from 192.168.0.9 to this node's
+# IP (see INSTALL.md wave 3 notes). LAN-discovery broadcasts don't traverse
+# pod networking; global discovery + static addresses cover it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syncthing
+  labels: {app: syncthing}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: syncthing}}
+  template:
+    metadata:
+      labels: {app: syncthing}
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: media-k8s-2
+      containers:
+        - name: syncthing
+          image: ghcr.io/linuxserver/syncthing
+          ports:
+            - containerPort: 8384
+              name: gui
+            - containerPort: 22000
+              hostPort: 22000
+              protocol: TCP
+            - containerPort: 22000
+              hostPort: 22000
+              protocol: UDP # QUIC
+            - containerPort: 21027
+              hostPort: 21027
+              protocol: UDP
+          env:
+            - {name: PUID, value: "1000"}
+            - {name: PGID, value: "1003"}
+            - {name: TZ, value: America/Chicago}
+          volumeMounts:
+            - {name: config, mountPath: /config}
+            - {name: rm, mountPath: /sync, subPath: Syncs}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 1Gi}
+          readinessProbe:
+            tcpSocket: {port: 8384}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: syncthing-config}
+        - name: rm
+          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: syncthing-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: syncthing}
+spec:
+  selector: {app: syncthing}
+  ports: [{port: 8384, targetPort: 8384}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: syncthing}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`sync.thenewmans.casa`)
+      kind: Rule
+      services: [{name: syncthing, port: 8384}]
+  tls: {certResolver: letsencrypt}
