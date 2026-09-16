@@ -8,10 +8,7 @@
   "commitMessageSuffix": " (k8s)",
   "kubernetes": {
     "enabled": true,
-    "fileMatch": ["^k8s/.*\\.yaml$"],
-    "autoDigest": {
-      "enabled": false
-    }
+    "fileMatch": ["^k8s/.*\\.yaml$"]
   },
   "packageRules": [
     {
