@@ -63,8 +63,10 @@ spec:
             - {name: gluetun, mountPath: /gluetun}
             - {name: tun, mountPath: /dev/net/tun}
           resources:
-            requests: {cpu: 50m, memory: 64Mi}
-            limits: {memory: 512Mi}
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 1Gi} # userspace-wg + DoT peaks >512Mi; OOM-killed
+            # at 512Mi (node dmesg: anon-rss 521MB) — every kill tore down the
+            # TUN fd ("not pollable") and masqueraded as tunnel flapping
         - name: qbittorrent
           image: ghcr.io/linuxserver/qbittorrent
           ports: [{containerPort: 8181}]
