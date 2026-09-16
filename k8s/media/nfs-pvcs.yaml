@@ -28,6 +28,18 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  name: nfs-backups
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: nfs-backups
+  resources:
+    requests:
+      storage: 40Ti
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
   name: nfs-perceptormediaexpansion
 spec:
   accessModes: [ReadWriteMany]

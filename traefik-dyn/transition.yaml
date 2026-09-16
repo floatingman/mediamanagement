@@ -67,6 +67,8 @@ http:
     sabnzbd-k8s:       {rule: Host(`sabnzbd.thenewmans.casa`),       entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
     torrent-k8s:       {rule: Host(`torrent.thenewmans.casa`),       entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
     sync-k8s:          {rule: Host(`sync.thenewmans.casa`),          entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    romm-k8s:         {rule: Host(`romm.thenewmans.casa`),         entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    calibre-k8s:      {rule: Host(`calibre.thenewmans.casa`),      entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
   services:
     k8s-edge:
       loadBalancer:

@@ -344,7 +344,7 @@ Any 5xx/timeout: `kubectl -n traefik logs deploy/traefik` and the dashboard.
 | 1 remainder | authelia (+valkey), nextdash, convertx — DONE 2026-09-15 (ns `auth`, `apps`) | zipline manifests + data migrated, pod blocked on node CPU model (needs x86-64-v2 → Proxmox CPU type `host` + rolling reboot), then uncomment the zipline router in traefik-dyn/transition.yaml |
 | 2 | *arr stack — DONE 2026-09-16 (ns `media`, 12 deployments + recyclarr CronJob) | NOTE: titlecardmaker-webui is in a PRIVATE ghcr registry; the media ns needs secret `ghcr-tcm` (docker-registry type, from the VM's ~/.docker/config.json ghcr auth) — recreate it if the namespace is ever rebuilt |
 | 3 | sabnzbd; gluetun+qbittorrent pod; syncthing — DONE 2026-09-16 | GSP docker mod is BROKEN (ghcr tarball fetch fails); replaced by the port-sync sidecar (k8s/media/port-sync.sh, reads gluetun's apikey from its own volume, endpoint /v1/portforward). Syncthing pinned to media-k8s-2 with hostPorts 22000/21027 — move router port-forwards to 192.168.0.20. Syncs relocated to NFS (ratchetmedia Syncs/); watch dirs now NFS-fed |
-| 3b | romm (+mariadb) and calibre-web | unblocked: libraries mount from the `nfs-backups` PV (`/volume3/Backups`) instead of CIFS |
+| 3b | romm (+mariadb) and calibre-web — DONE 2026-09-16 (ns `media`) | romm needs `enableServiceLinks: false` (its Service name makes kubelet inject `ROMM_PORT=tcp://...` which breaks its nginx template) and a tcpSocket readiness probe (its /api returns 401 unauthenticated). Libraries on nfs-backups PV |
 | never | plex, tunarr, ollama, perplexica, searxng, mcsmanager | no GPUs on cluster nodes; mcsmanager needs docker.sock |
 
 ## 12. Node storage sizing & Wave 2 prep

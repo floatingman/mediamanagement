@@ -1,0 +1,68 @@
+# calibre-web — migrated from compose/media-server.yaml. Books library on
+# the nfs-backups PV; the kepubify boot script (custom-cont-init.d, from the
+# calibre-web 0.6.27 binary-name fix) migrates with the config dir and gets
+# its explicit LSIO mount.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calibre-web
+  labels: {app: calibre-web}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: calibre-web}}
+  template:
+    metadata:
+      labels: {app: calibre-web}
+    spec:
+      containers:
+        - name: calibre-web
+          image: lscr.io/linuxserver/calibre-web:latest
+          ports: [{containerPort: 8083}]
+          env:
+            - {name: PUID, value: "1000"}
+            - {name: PGID, value: "1003"}
+            - {name: TZ, value: America/Chicago}
+            - {name: DOCKER_MODS, value: "linuxserver/mods:universal-calibre"}
+          volumeMounts:
+            - {name: config, mountPath: /config, subPath: config}
+            - {name: config, mountPath: /custom-cont-init.d, subPath: config/custom-cont-init.d}
+            - {name: bk, mountPath: /books, subPath: Books}
+          resources:
+            requests: {cpu: 50m, memory: 256Mi}
+            limits: {memory: 2Gi}
+          readinessProbe:
+            tcpSocket: {port: 8083}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: calibre-config}
+        - name: bk
+          persistentVolumeClaim: {claimName: nfs-backups}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: calibre-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: calibre-web}
+spec:
+  selector: {app: calibre-web}
+  ports: [{port: 8083, targetPort: 8083}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: calibre-web}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`calibre.thenewmans.casa`)
+      kind: Rule
+      services: [{name: calibre-web, port: 8083}]
+  tls: {certResolver: letsencrypt}

@@ -1,0 +1,132 @@
+# romm + romm-db — migrated from compose/gaming.yaml. Library mounts from
+# the nfs-backups PV (Backups share, subPath Games/Roms/Core_Roms) instead
+# of the VM's CIFS mount; everything else is appdata on local-path.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: romm-db
+  labels: {app: romm-db}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: romm-db}}
+  template:
+    metadata:
+      labels: {app: romm-db}
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:latest
+          ports: [{containerPort: 3306}]
+          env:
+            - {name: MARIADB_DATABASE, value: romm}
+            - {name: MARIADB_USER, value: romm-user}
+          envFrom:
+            - secretRef:
+                name: media-env # MARIADB_ROOT_PASSWORD + MARIADB_PASSWORD
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/mysql}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {memory: 1Gi}
+          livenessProbe:
+            exec:
+              command: [healthcheck.sh, --connect, --innodb_initialized]
+            initialDelaySeconds: 30
+            periodSeconds: 15
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: romm-db-data}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: romm
+  labels: {app: romm}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: romm}}
+  template:
+    metadata:
+      labels: {app: romm}
+    spec:
+      # The Service is named `romm`, so kubelet's legacy service-link env
+      # injection sets ROMM_PORT=tcp://<svcIP>:8080 — romm's nginx template
+      # renders `listen ${ROMM_PORT}` and dies. Same collision class as
+      # authelia/AUTHELIA_*.
+      enableServiceLinks: false
+      containers:
+        - name: romm
+          image: rommapp/romm:latest
+          ports: [{containerPort: 8080}]
+          env:
+            - {name: TZ, value: America/Chicago}
+            - {name: DB_HOST, value: romm-db}
+            - {name: DB_NAME, value: romm}
+            - {name: DB_USER, value: romm-user}
+            - {name: HASHEOUS_API_ENABLED, value: "true"}
+            - {name: HLTB_API_ENABLED, value: "true"}
+            - {name: SCAN_WORKERS, value: "12"}
+          envFrom:
+            - secretRef:
+                name: media-env # DB_PASSWD, ROMM_AUTH_SECRET_KEY, SCREENSCRAPER_*, STEAMGRIDDB_API_KEY, RETROACHIEVEMENTS_API_KEY
+          volumeMounts:
+            - {name: data, mountPath: /romm/resources, subPath: resources}
+            - {name: data, mountPath: /redis-data, subPath: redis}
+            - {name: data, mountPath: /romm/assets, subPath: assets}
+            - {name: data, mountPath: /romm/config, subPath: config}
+            - {name: bk, mountPath: /romm/library/roms, subPath: Games/Roms/Core_Roms}
+          resources:
+            requests: {cpu: 100m, memory: 512Mi}
+            limits: {memory: 4Gi}
+          readinessProbe:
+            tcpSocket: {port: 8080} # /api/* returns 401 unauthenticated — fails HTTP probes
+            initialDelaySeconds: 30
+            periodSeconds: 15
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: romm-data}
+        - name: bk
+          persistentVolumeClaim: {claimName: nfs-backups}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: romm-db-data}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: romm-data}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 40Gi}} # 28G of scraped resources + growth
+---
+apiVersion: v1
+kind: Service
+metadata: {name: romm-db}
+spec:
+  selector: {app: romm-db}
+  ports: [{port: 3306, targetPort: 3306}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: romm}
+spec:
+  selector: {app: romm}
+  ports: [{port: 8080, targetPort: 8080}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: romm}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`romm.thenewmans.casa`)
+      kind: Rule
+      services: [{name: romm, port: 8080}]
+  tls: {certResolver: letsencrypt}
