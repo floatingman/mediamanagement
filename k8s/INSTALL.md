@@ -245,7 +245,8 @@ Note: after stopping the compose trio the VM Traefik has no linkwarden backend
 and the subdomain 404s. The interim fix (deployed 2026-09-15): the VM edge
 loads `traefik-dyn/transition.yaml` (file provider added to the proxy service
 in compose/infrastructure.yaml) and forwards every migrated subdomain
-(linkwarden, auth, dash, convertx, zipline)
+(linkwarden, auth, dash, convertx, zipline, and since Wave 2 the entire *arr
+stack)
 to the cluster edge at https://192.168.0.19 — so they all work
 immediately, before the full Step 9 cutover. The VM Traefik issues its own
 LE certs for them; first request after adding a host may stall ~10s during
@@ -341,7 +342,7 @@ Any 5xx/timeout: `kubectl -n traefik logs deploy/traefik` and the dashboard.
 | Wave | Contents | Notes |
 |---|---|---|
 | 1 remainder | authelia (+valkey), nextdash, convertx — DONE 2026-09-15 (ns `auth`, `apps`) | zipline manifests + data migrated, pod blocked on node CPU model (needs x86-64-v2 → Proxmox CPU type `host` + rolling reboot), then uncomment the zipline router in traefik-dyn/transition.yaml |
-| 2 | *arr stack in `media` ns | prune + size nodes per §12 first; binds the pre-claimed NFS PVs; same-namespace DNS keeps `http://radarr:7878` URLs working |
+| 2 | *arr stack — DONE 2026-09-16 (ns `media`, 12 deployments + recyclarr CronJob) | NOTE: titlecardmaker-webui is in a PRIVATE ghcr registry; the media ns needs secret `ghcr-tcm` (docker-registry type, from the VM's ~/.docker/config.json ghcr auth) — recreate it if the namespace is ever rebuilt |
 | 3 | sabnzbd; gluetun+qbittorrent pod; syncthing (relocate syncs to NFS) | verify gluetun iptables accepts the pod CIDR on 8181 |
 | 3b | romm (+mariadb) and calibre-web | unblocked: libraries mount from the `nfs-backups` PV (`/volume3/Backups`) instead of CIFS |
 | never | plex, tunarr, ollama, perplexica, searxng, mcsmanager | no GPUs on cluster nodes; mcsmanager needs docker.sock |

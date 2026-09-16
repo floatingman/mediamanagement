@@ -51,6 +51,19 @@ http:
       entryPoints: [websecure]
       service: k8s-authelia
       tls: {certResolver: letsencrypt}
+    # Wave 2 — the *arr stack + companions (IngressRoutes in ns media)
+    radarr-k8s:        {rule: Host(`radarr.thenewmans.casa`),        entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    sonarr-k8s:        {rule: Host(`sonarr.thenewmans.casa`),        entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    lidarr-k8s:        {rule: Host(`lidarr.thenewmans.casa`),        entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    bazarr-k8s:        {rule: Host(`bazarr.thenewmans.casa`),        entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    profilarr-k8s:     {rule: Host(`profilarr.thenewmans.casa`),     entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    titlecardmaker-k8s: {rule: Host(`titlecardmaker.thenewmans.casa`), entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    seerr-k8s:         {rule: Host(`seerr.thenewmans.casa`),         entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    tautulli-k8s:      {rule: Host(`tautulli.thenewmans.casa`),      entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    agregarr-k8s:      {rule: Host(`agregarr.thenewmans.casa`),      entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    cleanuparr-k8s:    {rule: Host(`cleanuparr.thenewmans.casa`),    entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    maintainerr-k8s:   {rule: Host(`maintainerr.thenewmans.casa`),   entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    audiobookshelf-k8s: {rule: Host(`audiobookshelf.thenewmans.casa`), entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
   services:
     k8s-edge:
       loadBalancer:

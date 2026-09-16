@@ -1,0 +1,38 @@
+# Bind the pre-claimed static NFS PVs from k8s/foundation/nfs-volumes.yaml
+# into this namespace. RWX — several pods mount the same shares, exactly like
+# the compose stack mounts the same NFS paths.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-ratchetmedia
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: nfs-ratchetmedia
+  resources:
+    requests:
+      storage: 40Ti # must be <= PV capacity (advisory)
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-perceptormedia
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: nfs-perceptormedia
+  resources:
+    requests:
+      storage: 40Ti
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-perceptormediaexpansion
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: nfs-perceptormediaexpansion
+  resources:
+    requests:
+      storage: 40Ti

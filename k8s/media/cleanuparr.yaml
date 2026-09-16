@@ -1,0 +1,65 @@
+# cleanuparr — download-queue cleanup; deletes via the downloader APIs
+# (qbittorrent/sabnzbd, both still on the VM until Wave 3 — their configured
+# URLs http://192.168.0.9:8181/8081 carry over unchanged).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cleanuparr
+  labels: {app: cleanuparr}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: cleanuparr}}
+  template:
+    metadata:
+      labels: {app: cleanuparr}
+    spec:
+      containers:
+        - name: cleanuparr
+          image: ghcr.io/cleanuparr/cleanuparr:latest
+          ports: [{containerPort: 11011}]
+          env:
+            - {name: PORT, value: "11011"}
+            - {name: BASE_PATH, value: ""}
+            - {name: PUID, value: "1000"}
+            - {name: PGID, value: "1003"}
+            - {name: UMASK, value: "022"}
+            - {name: TZ, value: America/Chicago}
+          volumeMounts:
+            - {name: config, mountPath: /config}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          readinessProbe:
+            tcpSocket: {port: 11011}
+            initialDelaySeconds: 15
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: cleanuparr-config}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: cleanuparr-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 1Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: cleanuparr}
+spec:
+  selector: {app: cleanuparr}
+  ports: [{port: 11011, targetPort: 11011}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: cleanuparr}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`cleanuparr.thenewmans.casa`)
+      kind: Rule
+      services: [{name: cleanuparr, port: 11011}]
+  tls: {certResolver: letsencrypt}

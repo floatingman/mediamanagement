@@ -1,0 +1,66 @@
+# TitleCardMaker — 35G of source stills + generated cards on local-path
+# (node-pinned by definition; the biggest PVC in the wave).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: titlecardmaker
+  labels: {app: titlecardmaker}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: titlecardmaker}}
+  template:
+    metadata:
+      labels: {app: titlecardmaker}
+    spec:
+      containers:
+        - name: titlecardmaker
+          image: ghcr.io/titlecardmaker/titlecardmaker-webui:latest
+          ports: [{containerPort: 4242}]
+          env:
+            - {name: TZ, value: America/Chicago}
+          volumeMounts:
+            # TV libraries — aliases mirror Sonarr so episode paths line up
+            - {name: config, mountPath: /config}
+            - {name: pm, mountPath: /media, subPath: Video/TV}
+            - {name: rm, mountPath: /ratchetmedia, subPath: TVShows}
+          resources:
+            requests: {cpu: 100m, memory: 512Mi}
+            limits: {memory: 4Gi}
+          readinessProbe:
+            tcpSocket: {port: 4242}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: titlecardmaker-config}
+        - name: pm
+          persistentVolumeClaim: {claimName: nfs-perceptormedia}
+        - name: rm
+          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: titlecardmaker-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 60Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: titlecardmaker}
+spec:
+  selector: {app: titlecardmaker}
+  ports: [{port: 4242, targetPort: 4242}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: titlecardmaker}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`titlecardmaker.thenewmans.casa`)
+      kind: Rule
+      services: [{name: titlecardmaker, port: 4242}]
+  tls: {certResolver: letsencrypt}

@@ -1,0 +1,63 @@
+# Maintainerr — runs as 1000:1003 per compose `user:`; GITHUB_TOKEN from the
+# generated media-env secret.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maintainerr
+  labels: {app: maintainerr}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: maintainerr}}
+  template:
+    metadata:
+      labels: {app: maintainerr}
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1003
+      containers:
+        - name: maintainerr
+          image: ghcr.io/maintainerr/maintainerr:latest
+          ports: [{containerPort: 6246}]
+          env:
+            - {name: TZ, value: America/Chicago}
+            - {name: GITHUB_TOKEN, valueFrom: {secretKeyRef: {name: media-env, key: GITHUB_TOKEN}}}
+          volumeMounts:
+            - {name: config, mountPath: /opt/data}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 1Gi}
+          readinessProbe:
+            tcpSocket: {port: 6246}
+            initialDelaySeconds: 15
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: maintainerr-config}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: maintainerr-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: maintainerr}
+spec:
+  selector: {app: maintainerr}
+  ports: [{port: 6246, targetPort: 6246}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: maintainerr}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`maintainerr.thenewmans.casa`)
+      kind: Rule
+      services: [{name: maintainerr, port: 6246}]
+  tls: {certResolver: letsencrypt}

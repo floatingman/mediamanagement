@@ -1,0 +1,67 @@
+# Audiobookshelf — 1000:1003 per compose `user:`; audio libraries on the
+# expansion share; config+metadata share one PVC via subPaths (compose layout).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audiobookshelf
+  labels: {app: audiobookshelf}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: audiobookshelf}}
+  template:
+    metadata:
+      labels: {app: audiobookshelf}
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1003
+      containers:
+        - name: audiobookshelf
+          image: ghcr.io/advplyr/audiobookshelf:latest
+          ports: [{containerPort: 80}]
+          env:
+            - {name: TZ, value: America/Chicago}
+          volumeMounts:
+            - {name: pme, mountPath: /audiobooks, subPath: Audio/audiobooks}
+            - {name: pme, mountPath: /podcasts, subPath: Audio/podcasts}
+            - {name: config, mountPath: /config, subPath: config}
+            - {name: config, mountPath: /metadata, subPath: metadata}
+          resources:
+            requests: {cpu: 50m, memory: 256Mi}
+            limits: {memory: 2Gi}
+          readinessProbe:
+            tcpSocket: {port: 80}
+            initialDelaySeconds: 15
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: audiobookshelf-config}
+        - name: pme
+          persistentVolumeClaim: {claimName: nfs-perceptormediaexpansion}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: audiobookshelf-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: audiobookshelf}
+spec:
+  selector: {app: audiobookshelf}
+  ports: [{port: 80, targetPort: 80}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: audiobookshelf}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`audiobookshelf.thenewmans.casa`)
+      kind: Rule
+      services: [{name: audiobookshelf, port: 80}]
+  tls: {certResolver: letsencrypt}

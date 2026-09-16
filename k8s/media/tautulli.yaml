@@ -1,0 +1,61 @@
+# Tautulli — Plex activity monitor. Talks to Plex via API (plex stays on VM,
+# reachable at http://192.168.0.9:32400 — its configured URL carries over).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tautulli
+  labels: {app: tautulli}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: tautulli}}
+  template:
+    metadata:
+      labels: {app: tautulli}
+    spec:
+      containers:
+        - name: tautulli
+          image: tautulli/tautulli
+          ports: [{containerPort: 8181}]
+          env:
+            - {name: PUID, value: "1000"}
+            - {name: PGID, value: "1003"}
+            - {name: TZ, value: America/Chicago}
+          volumeMounts:
+            - {name: config, mountPath: /config}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 1Gi}
+          readinessProbe:
+            tcpSocket: {port: 8181}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: tautulli-config}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: tautulli-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: tautulli}
+spec:
+  selector: {app: tautulli}
+  ports: [{port: 8181, targetPort: 8181}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: tautulli}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`tautulli.thenewmans.casa`)
+      kind: Rule
+      services: [{name: tautulli, port: 8181}]
+  tls: {certResolver: letsencrypt}

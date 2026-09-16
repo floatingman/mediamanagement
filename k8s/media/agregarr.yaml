@@ -1,0 +1,63 @@
+# agregarr — collection display; writes poster placeholders into the
+# perceptormedia share (subPath dirs must exist: placeholders/movies, tv).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agregarr
+  labels: {app: agregarr}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: agregarr}}
+  template:
+    metadata:
+      labels: {app: agregarr}
+    spec:
+      containers:
+        - name: agregarr
+          image: agregarr/agregarr:latest
+          ports: [{containerPort: 7171}]
+          env:
+            - {name: TZ, value: America/Chicago}
+          volumeMounts:
+            - {name: config, mountPath: /app/config}
+            - {name: pm, mountPath: /data/movies, subPath: placeholders/movies}
+            - {name: pm, mountPath: /data/tv, subPath: placeholders/tv}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 1Gi}
+          readinessProbe:
+            tcpSocket: {port: 7171}
+            initialDelaySeconds: 15
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: agregarr-config}
+        - name: pm
+          persistentVolumeClaim: {claimName: nfs-perceptormedia}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: agregarr-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: agregarr}
+spec:
+  selector: {app: agregarr}
+  ports: [{port: 7171, targetPort: 7171}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: agregarr}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`agregarr.thenewmans.casa`)
+      kind: Rule
+      services: [{name: agregarr, port: 7171}]
+  tls: {certResolver: letsencrypt}

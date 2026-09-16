@@ -1,0 +1,37 @@
+# Wave 2: the *arr stack + companions. Everything lives in ONE namespace so
+# bare DNS names (http://radarr:7878 etc.) baked into app configs keep
+# working. NFS PVs mount at the SAME in-container paths as compose — the
+# SQLite DBs' absolute paths need zero remapping.
+#
+#   k8s/scripts/gen-env.sh
+#   kubectl apply -k k8s/media
+#   kubectl -n media scale deploy --all --replicas=0   # before data lands
+#   # stop the compose stack, then per service:
+#   k8s/scripts/migrate-pvc.sh --ns media --pvc radarr-config \
+#       --src appdata/radarr --deploy radarr --clear
+#   kubectl -n media patch cronjob recyclarr -p '{"spec":{"suspend":false}}'
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: media
+generatorOptions:
+  disableNameSuffixHash: true
+secretGenerator:
+  - name: media-env
+    envs:
+      - env.txt
+resources:
+  - namespace.yaml
+  - nfs-pvcs.yaml
+  - radarr.yaml
+  - sonarr.yaml
+  - lidarr.yaml
+  - bazarr.yaml
+  - profilarr.yaml
+  - titlecardmaker.yaml
+  - seerr.yaml
+  - tautulli.yaml
+  - agregarr.yaml
+  - cleanuparr.yaml
+  - maintainerr.yaml
+  - audiobookshelf.yaml
+  - recyclarr.yaml

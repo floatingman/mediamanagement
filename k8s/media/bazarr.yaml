@@ -1,0 +1,68 @@
+# bazarr — mounts both movie/TV trees from both NAS shares (subtitle paths).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bazarr
+  labels: {app: bazarr}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: bazarr}}
+  template:
+    metadata:
+      labels: {app: bazarr}
+    spec:
+      containers:
+        - name: bazarr
+          image: lscr.io/linuxserver/bazarr:latest
+          ports: [{containerPort: 6767}]
+          env:
+            - {name: PUID, value: "1000"}
+            - {name: PGID, value: "1003"}
+            - {name: TZ, value: America/Chicago}
+          volumeMounts:
+            - {name: config, mountPath: /config}
+            - {name: rm, mountPath: /ratchetmediamovies, subPath: Movies}
+            - {name: rm, mountPath: /ratchetmediatvshows, subPath: TVShows}
+            - {name: pm, mountPath: /Movies, subPath: Video/Movies}
+            - {name: pm, mountPath: /TV, subPath: Video/TV}
+          resources:
+            requests: {cpu: 50m, memory: 256Mi}
+            limits: {memory: 1Gi}
+          readinessProbe:
+            tcpSocket: {port: 6767}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: bazarr-config}
+        - name: pm
+          persistentVolumeClaim: {claimName: nfs-perceptormedia}
+        - name: rm
+          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: bazarr-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: bazarr}
+spec:
+  selector: {app: bazarr}
+  ports: [{port: 6767, targetPort: 6767}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: bazarr}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`bazarr.thenewmans.casa`)
+      kind: Rule
+      services: [{name: bazarr, port: 6767}]
+  tls: {certResolver: letsencrypt}

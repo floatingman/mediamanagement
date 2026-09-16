@@ -1,0 +1,62 @@
+# Overseerr — request UI. /app/config mount path per compose.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seerr
+  labels: {app: seerr}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: seerr}}
+  template:
+    metadata:
+      labels: {app: seerr}
+    spec:
+      containers:
+        - name: seerr
+          image: ghcr.io/seerr-team/seerr:latest
+          ports: [{containerPort: 5055}]
+          env:
+            - {name: LOG_LEVEL, value: debug}
+            - {name: PUID, value: "1000"}
+            - {name: PGID, value: "1003"}
+            - {name: TZ, value: America/Chicago}
+            - {name: PORT, value: "5055"}
+          volumeMounts:
+            - {name: config, mountPath: /app/config}
+          resources:
+            requests: {cpu: 50m, memory: 256Mi}
+            limits: {memory: 1Gi}
+          readinessProbe:
+            tcpSocket: {port: 5055}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: seerr-config}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: seerr-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: seerr}
+spec:
+  selector: {app: seerr}
+  ports: [{port: 5055, targetPort: 5055}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: seerr}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`seerr.thenewmans.casa`)
+      kind: Rule
+      services: [{name: seerr, port: 5055}]
+  tls: {certResolver: letsencrypt}
