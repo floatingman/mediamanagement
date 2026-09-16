@@ -34,13 +34,12 @@ spec:
       containers:
         - name: gluetun
           image: qmcgaw/gluetun
-          lifecycle:
-            postStart:
-              exec:
-                # (1) clear stale ip rules (k8s gotcha); (2) force tun0 MTU
-                # after discovery settles — k3s VXLAN + WG overhead makes
-                # the discovered 1420 too big ("sendmmsg: message too long").
-                command: ["/bin/sh", "-c", "(ip rule del table 51820; ip -6 rule del table 51820) || true"]
+          # NOTE: no postStart rule-deletion here — it races gluetun's re-add
+          # on container restarts and can delete the LIVE routing rule
+          # (traffic then bypasses the tunnel). The initContainer handles
+          # stale rules deterministically; if the "ip rule 101: file exists"
+          # error returns after gluetun's internal restarts, delete the pod
+          # (fresh netns) rather than re-adding a racy hook.
           securityContext:
             capabilities:
               add: [NET_ADMIN]
@@ -53,6 +52,11 @@ spec:
             # k3s VXLAN (1450) + WireGuard overhead: the discovered 1420 is too
             # big — large packets die with "sendmmsg: message too long".
             - {name: WIREGUARD_MTU, value: "1320"}
+            # Cloudflare's default DoT (853) gets connection-RESET from some
+            # ProtonVPN exit IPs (datacenter throttling) — gluetun's own
+            # healthcheck does DNS lookups, so a bad exit = restart loop.
+            # Quad9's DoT has been stable from these exits.
+            - {name: DOT_PROVIDER, value: quad9}
             - {name: FIREWALL_INPUT_PORTS, value: "8181"}
             - {name: TZ, value: America/Chicago}
           volumeMounts:
