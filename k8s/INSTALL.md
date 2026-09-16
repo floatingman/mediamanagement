@@ -298,7 +298,7 @@ Public IP is unchanged, so cloudflare-ddns needs nothing.
 for h in auth radarr sonarr lidarr bazarr sabnzbd torrent seerr tautulli \
          agregarr tunarr cleanuparr maintainerr profilarr titlecardmaker \
          audiobookshelf calibre romm minecraft convertx zipline sync \
-         search perplexica linkwarden headlamp; do
+         search perplexica linkwarden headlamp rancher; do
   echo -n "$h: "; curl -sIo /dev/null -w '%{http_code}\n' https://$h.thenewmans.casa
 done
 ```
@@ -317,20 +317,24 @@ Any 5xx/timeout: `kubectl -n traefik logs deploy/traefik` and the dashboard.
   `kubectl apply -k` the affected kustomization.
 - **Reset a botched cluster**: `/usr/local/bin/k3s-killall.sh` +
   `/usr/local/bin/k3s-uninstall.sh` per node, then redo Step 3.
-- **Web GUI — Headlamp**: deployed 2026-09-15 (chart `headlamp/headlamp` from
-  https://kubernetes-sigs.github.io/headlamp/, ns `headlamp`) at
-  https://headlamp.thenewmans.casa, gated by authelia, then a cluster token:
-  `kubectl -n headlamp create token headlamp-admin --duration=87600h`.
-  **Rancher REMOVED same day:** v2.15.1 (the only release supporting k8s
-  1.36) has a fatal bug here — ~60s after the pod starts, something it runs
-  DELETES the `cluster-admin` ClusterRole, then rancher fatals on its own
-  broken RBAC and every startup repeats the cycle. Verified empirically
-  (role survives with rancher scaled to 0, dies when it runs, on a fully
-  clean reinstall). If it's ever retried on a newer release: uninstall
-  requires deleting ns cattle-* + cattle CRDs (strip finalizers) + the
-  v1.ext.cattle.io APIService, and RECREATE cluster-admin afterward:
-  `kubectl apply -f -` with the standard rules (`apiGroups: ["*"]`,
-  `resources: ["*"]`, `verbs: ["*"]`, `nonResourceURLs: ["*"]`).
+- **Rancher (management VM)**: deployed 2026-09-16 on a separate VM
+  (192.168.0.22, single-node k3s **v1.35** — the 2.15.1-on-1.36 pairing is
+  broken, see the Rancher removal note below). The media cluster is
+  registered as a DOWNSTREAM cluster (`media`, agent in ns cattle-system).
+  UI: https://rancher.thenewmans.casa (routed via traefik-dyn → VM :443,
+  skip-verify LAN hop; LE cert terminated at the media edge). Rancher runs
+  `tls=external` + setting `agent-tls-mode=system-store` so agents trust the
+  public LE cert; the first import needed `kubectl -n cattle-system set env
+  deploy/cattle-cluster-agent STRICT_VERIFY=false` because the cached
+  manifest still carried strict-CA. Kubeconfig for the VM cluster:
+  `~/.kube/rancher-vm` (KUBECONFIG=... to target it).
+  **Rancher REMOVED from the media cluster 2026-09-15:** v2.15.1 (the only
+  release supporting k8s 1.36) deletes the `cluster-admin` ClusterRole ~60s
+  after start, then fatals on its own RBAC — verified empirically on a clean
+  reinstall; role survives with rancher scaled to 0. If rancher is ever
+  removed from a cluster: delete ns cattle-* + cattle CRDs (strip
+  finalizers) + the v1.ext.cattle.io APIService, then RECREATE cluster-admin
+  (`apiGroups/resources/verbs: ["*"]`, `nonResourceURLs: ["*"]`).
 
 ## 11. Roadmap after this guide
 

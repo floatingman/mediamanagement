@@ -26,6 +26,11 @@ http:
       entryPoints: [websecure]
       service: k8s-edge
       tls: {certResolver: letsencrypt}
+    rancher-mgmt:
+      rule: Host(`rancher.thenewmans.casa`)
+      entryPoints: [websecure]
+      service: rancher-mgmt-vm
+      tls: {certResolver: letsencrypt}
     dash-k8s:
       rule: Host(`dash.thenewmans.casa`)
       entryPoints: [websecure]
@@ -59,3 +64,7 @@ http:
     k8s-authelia:
       loadBalancer:
         servers: [{url: "http://192.168.0.19:30991"}]
+    rancher-mgmt-vm:
+      loadBalancer:
+        serversTransport: k8s-edge-transport
+        servers: [{url: "https://192.168.0.22:443"}]
