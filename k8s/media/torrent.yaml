@@ -21,9 +21,26 @@ spec:
     metadata:
       labels: {app: torrent}
     spec:
+      initContainers:
+        # Gluetun k8s gotcha (gluetun-wiki/kubernetes.md): stale ip rules in
+        # the pod netns make "adding ip rule 101 ... file exists" fail forever,
+        # killing DNS + tunnel setup. Clear them BEFORE gluetun starts.
+        - name: clear-ip-rules
+          image: busybox:1.36
+          command: [sh, -c, "(ip rule del table 51820; ip -6 rule del table 51820) || true"]
+          securityContext:
+            capabilities:
+              add: [NET_ADMIN]
       containers:
         - name: gluetun
           image: qmcgaw/gluetun
+          lifecycle:
+            postStart:
+              exec:
+                # (1) clear stale ip rules (k8s gotcha); (2) force tun0 MTU
+                # after discovery settles — k3s VXLAN + WG overhead makes
+                # the discovered 1420 too big ("sendmmsg: message too long").
+                command: ["/bin/sh", "-c", "(ip rule del table 51820; ip -6 rule del table 51820) || true"]
           securityContext:
             capabilities:
               add: [NET_ADMIN]
@@ -33,8 +50,9 @@ spec:
             - {name: WIREGUARD_IMPLEMENTATION, value: userspace}
             - {name: WIREGUARD_PRIVATE_KEY, valueFrom: {secretKeyRef: {name: media-env, key: PROTONVPN_WIREGUARD_PRIVATE_KEY}}}
             - {name: SERVER_CITIES, value: Chicago}
-            - {name: VPN_PORT_FORWARDING, value: "on"}
-            - {name: VPN_PORT_FORWARDING_PROVIDER, value: protonvpn}
+            # k3s VXLAN (1450) + WireGuard overhead: the discovered 1420 is too
+            # big — large packets die with "sendmmsg: message too long".
+            - {name: WIREGUARD_MTU, value: "1320"}
             - {name: FIREWALL_INPUT_PORTS, value: "8181"}
             - {name: TZ, value: America/Chicago}
           volumeMounts:
@@ -42,7 +60,7 @@ spec:
             - {name: tun, mountPath: /dev/net/tun}
           resources:
             requests: {cpu: 50m, memory: 64Mi}
-            limits: {memory: 256Mi}
+            limits: {memory: 512Mi}
         - name: qbittorrent
           image: ghcr.io/linuxserver/qbittorrent
           ports: [{containerPort: 8181}]
