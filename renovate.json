@@ -1,0 +1,55 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "America/Chicago",
+  "schedule": ["before 6am on Monday"],
+  "prConcurrentLimit": 5,
+  "labels": ["dependencies"],
+  "commitMessageSuffix": " (k8s)",
+  "kubernetes": {
+    "enabled": true,
+    "fileMatch": ["^k8s/.*\\.yaml$"],
+    "autoDigest": {
+      "enabled": false
+    }
+  },
+  "packageRules": [
+    {
+      "description": "Pin-averse tags in manifests — flag but don't auto-merge anything",
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["major"],
+      "addLabels": ["major-update"],
+      "automerge": false
+    },
+    {
+      "description": "*arr apps run DB migrations on major jumps — always manual review",
+      "matchFileNames": ["k8s/media/*.yaml"],
+      "matchUpdateTypes": ["major", "minor"],
+      "automerge": false,
+      "prBodyNotes": ["_Reminder: check the app changelog for DB migration notes before merging; restart one app and check logs before the rest._"]
+    },
+    {
+      "description": "Infrastructure charts — manual, these move the edge",
+      "matchFileNames": ["k8s/helm/*.yaml"],
+      "automerge": false
+    },
+    {
+      "description": "Digest-pinning for :latest is meaningless churn — disable",
+      "matchUpdateTypes": ["digest"],
+      "enabled": false
+    }
+  ],
+  "regexManagers": [
+    {
+      "description": "helm chart versions referenced in INSTALL.md commands",
+      "fileMatch": ["^k8s/INSTALL\\.md$", "^TROUBLESHOOTING\\.md$"],
+      "matchStrings": [
+        "helm install \\S+ (?<depName>[^ /]+)/(?<packageName>[^ ]+) .*--version (?<currentValue>[^ ]+)"
+      ],
+      "datasourceTemplate": "helm"
+    }
+  ],
+  "helmv3": {
+    "fileMatch": ["^k8s/helm/.*-values\\.yaml$"]
+  }
+}
