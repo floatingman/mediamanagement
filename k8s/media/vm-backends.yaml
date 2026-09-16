@@ -1,0 +1,50 @@
+# Selector-less Services pointing at backends still on the Docker VM
+# (192.168.0.9), so compose-era DNS names keep resolving from inside this
+# namespace — the *arr download client configs say http://sabnzbd:8080 and
+# http://torrent:8181, exactly as they did under compose networking.
+#
+# Port mapping: Service listens on the COMPOSE container port (what the apps
+# reference); Endpoints point at the VM's PUBLISHED host port.
+#   sabnzbd: container 8080 -> VM host 8081
+#   torrent: container 8181 -> VM host 8181 (same)
+#
+# RETIRE each Service+Endpoints pair when Wave 3 migrates the service into
+# the cluster — the real Deployment's Service replaces it under the same
+# name and no app config ever changes.
+apiVersion: v1
+kind: Service
+metadata:
+  name: sabnzbd
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8081
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: sabnzbd
+subsets:
+  - addresses:
+      - ip: 192.168.0.9
+    ports:
+      - port: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: torrent
+spec:
+  ports:
+    - port: 8181
+      targetPort: 8181
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: torrent
+subsets:
+  - addresses:
+      - ip: 192.168.0.9
+    ports:
+      - port: 8181

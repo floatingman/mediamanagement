@@ -22,7 +22,7 @@ secretGenerator:
 resources:
   - namespace.yaml
   - nfs-pvcs.yaml
-  - radarr.yaml
+  - vm-backends.yaml
   - sonarr.yaml
   - lidarr.yaml
   - bazarr.yaml
