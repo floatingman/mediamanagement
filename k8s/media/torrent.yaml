@@ -106,16 +106,33 @@ spec:
           persistentVolumeClaim: {claimName: torrent-config}
         - name: rm
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
-        - name: tun
-          hostPath: {path: /dev/net/tun}
+---
+# ROLLED BACK TO DOCKER VM (2026-09-16): gluetun-in-k8s has an architectural
+# healthcheck/DNS-interceptor startup race (see TROUBLESHOOTING.md); the same
+# image+key runs perfectly on the VM. The Deployment above is kept scaled to 0
+# for a future retry. This selector-less Service preserves the `torrent` DNS
+# name the *arr clients use, pointing at the VM's published WebUI port.
+apiVersion: v1
+kind: Service
+metadata:
+  name: torrent # same name the *arr clients already use
+  namespace: media
+spec:
+  type: ClusterIP
+  ports:
+     - port: 8181
+       targetPort: 8181
 ---
 apiVersion: v1
-kind: PersistentVolumeClaim
-metadata: {name: gluetun-config}
-spec:
-  accessModes: [ReadWriteOnce]
-  storageClassName: local-path
-  resources: {requests: {storage: 1Gi}}
+kind: Endpoints
+metadata:
+  name: torrent
+  namespace: media
+subsets:
+  - addresses:
+      - ip: 192.168.0.9
+    ports:
+      - port: 8181
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -124,22 +141,3 @@ spec:
   accessModes: [ReadWriteOnce]
   storageClassName: local-path
   resources: {requests: {storage: 2Gi}}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: torrent # same name the *arr clients already use
-spec:
-  selector: {app: torrent}
-  ports: [{port: 8181, targetPort: 8181}]
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata: {name: torrent}
-spec:
-  entryPoints: [websecure]
-  routes:
-    - match: Host(`torrent.thenewmans.casa`)
-      kind: Rule
-      services: [{name: torrent, port: 8181}]
-  tls: {certResolver: letsencrypt}

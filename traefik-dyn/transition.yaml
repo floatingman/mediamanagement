@@ -65,7 +65,8 @@ http:
     maintainerr-k8s:   {rule: Host(`maintainerr.thenewmans.casa`),   entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
     audiobookshelf-k8s: {rule: Host(`audiobookshelf.thenewmans.casa`), entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
     sabnzbd-k8s:       {rule: Host(`sabnzbd.thenewmans.casa`),       entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
-    torrent-k8s:       {rule: Host(`torrent.thenewmans.casa`),       entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    # torrent serves from the Docker VM again (gluetun-on-k8s healthcheck race;
+    # see TROUBLESHOOTING.md) — docker labels route it, no forward needed here.
     sync-k8s:          {rule: Host(`sync.thenewmans.casa`),          entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
     romm-k8s:         {rule: Host(`romm.thenewmans.casa`),         entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
     calibre-k8s:      {rule: Host(`calibre.thenewmans.casa`),      entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}

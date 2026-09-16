@@ -65,5 +65,5 @@ services:
     volumes:
       - ../appdata/qbittorrent:/config
       - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Downloads/torrents:/downloads
-      - ../../syncs/Sync/torrent:/watch
+      - /mnt/ratchetmedia/Syncs/torrent:/watch # syncs relocated to NFS 2026-09-16 (syncthing in k8s writes here)
     restart: unless-stopped
