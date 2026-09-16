@@ -403,6 +403,9 @@ local-path is directory-backed, so deletes reclaim real space.
 
 ## Troubleshooting
 
+Full cross-environment guide (docker + k8s, symptom→fix): `TROUBLESHOOTING.md`
+at the repo root. K8s-install-specific entries below.
+
 | Symptom | Cause / fix |
 |---|---|
 | Node `NotReady`, flannel errors | 8472/udp blocked between nodes (ufw) |
