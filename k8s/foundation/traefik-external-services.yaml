@@ -1,34 +1,19 @@
 # Edge-transition config: routes subdomains of services still running on the
-# Docker VM (192.168.0.9) so *.thenewmans.casa keeps working after the k8s
-# Traefik takes over ports 80/443. Mounted into the Traefik pod by the
-# k8s/helm/traefik-values.yaml file provider.
+# Docker VM (192.168.0.9). Mounted into the Traefik pod by the
+# k8s/helm/traefik-values.yaml file provider. At the §9 cutover (2026-09-16)
+# this became the authoritative route table for ALL VM residents once the
+# router moved 80/443 to this cluster edge (192.168.0.19); the docker
+# Traefik keeps running as instant rollback (flip the router back).
 #
-# WAVE 1 (2026-09-15): authelia, nextdash, convertx, zipline migrated.
-# WAVE 2 (2026-09-16): the entire *arr stack + companions migrated
-# (radarr, sonarr, lidarr, bazarr, profilarr, titlecardmaker, seerr,
-# tautulli, agregarr, cleanuparr, maintainerr, audiobookshelf, recyclarr) —
-# served by IngressRoutes in ns `media`.
-# Remaining on the VM: downloaders (Wave 3), the permanent GPU tier, and the
-# file services still on CIFS (romm/calibre-web, Wave 3b).
+# Permanent VM residents routed here:
+#   torrent (rolled back from k8s — gluetun race, see TROUBLESHOOTING.md)
+#   tunarr, search (searxng), perplexica, minecraft (mcsmanager)
+# Plex is host-networking on the VM (app.plex.tv / :32400) — not routed here.
+#
+# Everything else lives in-cluster behind IngressRoutes.
+#
 # Duplicate Host rules between this file and an IngressRoute make routing
 # undefined; delete from here the moment a service gets an IngressRoute.
-#
-# CUTOVER RUNBOOK (§9) — when ready to move the edge:
-#   1. Label the ingress node (done: media-k8s-1).
-#   2. Foundation + helm releases are installed (see kustomization.yaml).
-#   3. These services have NO published host port today (Traefik-only
-#      internal) and need host ports for the k8s edge to reach them:
-#        searxng:    ports: ["8082:8080"]   (compose/utilities.yaml) — PERMANENT
-#        perplexica: ports: ["3002:3000"]   (compose/ai.yaml)        — PERMANENT
-#      searxng + perplexica never migrate — GPU-bound via ollama, and the
-#      cluster nodes have no NVIDIA GPUs.
-#   4. Stop the old edge:
-#        docker compose stop proxy
-#   5. Move router port-forwards 80/443 from 192.168.0.9 to the ingress
-#      node IP. Same LAN / same public IP, so cloudflare-ddns needs no change.
-#      (Keep 32400/tcp -> 192.168.0.9 for Plex.)
-#   6. As each remaining service migrates to k8s, delete its router AND
-#      service blocks below; its IngressRoute takes over. Never keep both.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -37,13 +22,22 @@ metadata:
 data:
   external-services.yml: |
     http:
+      serversTransports:
+        vm-https-transport:
+          # Rancher VM serves its own TLS; the backend URL is an IP so name
+          # verification would fail. LAN-only hop.
+          insecureSkipVerify: true
       routers:
-        tunarr:        {rule: Host(`tunarr.thenewmans.casa`),        entryPoints: [websecure], service: vm-tunarr,        tls: {certResolver: letsencrypt}, middlewares: [authelia@kubernetescrd]}
-        # --- Permanent VM residents (GPU-bound via ollama) ---
+        rancher:       {rule: Host(`rancher.thenewmans.casa`),       entryPoints: [websecure], service: vm-rancher,       tls: {certResolver: letsencrypt}}
+        torrent:       {rule: Host(`torrent.thenewmans.casa`),       entryPoints: [websecure], service: vm-torrent,       tls: {certResolver: letsencrypt}}
         search:        {rule: Host(`search.thenewmans.casa`),        entryPoints: [websecure], service: vm-search,        tls: {certResolver: letsencrypt}}
-        # perplexica (needs the 3002 host port first):
-        # perplexica: {rule: Host(`perplexica.thenewmans.casa`), entryPoints: [websecure], service: vm-perplexica, tls: {certResolver: letsencrypt}, middlewares: [authelia@kubernetescrd]}
+        minecraft:     {rule: Host(`minecraft.thenewmans.casa`),     entryPoints: [websecure], service: vm-minecraft,     tls: {certResolver: letsencrypt}}
+        # tunarr + perplexica moved to IngressRoutes (vm-resident-routes.yaml):
+        # file-provider routes can't reference the authelia CRD middleware
       services:
+        vm-rancher:        {loadBalancer: {serversTransport: vm-https-transport, servers: [{url: "https://192.168.0.22:443"}]}}
+        vm-torrent:        {loadBalancer: {servers: [{url: "http://192.168.0.9:8181"}]}}
         vm-tunarr:         {loadBalancer: {servers: [{url: "http://192.168.0.9:8000"}]}}
         vm-search:         {loadBalancer: {servers: [{url: "http://192.168.0.9:8082"}]}}
-        # vm-perplexica:   {loadBalancer: {servers: [{url: "http://192.168.0.9:3002"}]}}
+        vm-perplexica:     {loadBalancer: {servers: [{url: "http://192.168.0.9:3002"}]}}
+        vm-minecraft:      {loadBalancer: {servers: [{url: "http://192.168.0.9:23333"}]}}

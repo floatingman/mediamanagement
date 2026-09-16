@@ -97,8 +97,10 @@ services:
       - traefik.http.services.searxng.loadbalancer.server.port=8080
       - traefik.http.routers.searxng.rule=Host(`search.thenewmans.casa`)
     volumes:
-      - ../appdata/searxng/config:/etc/searxng
-      - ../appdata/searxng/cache:/var/cache/searxng
+       - ../appdata/searxng/config:/etc/searxng
+       - ../appdata/searxng/cache:/var/cache/searxng
+    ports:
+      - "8082:8080" # published for the k8s edge (permanent — never migrates, GPU-bound via perplexica)
     depends_on:
       - searxng-valkey
     restart: unless-stopped

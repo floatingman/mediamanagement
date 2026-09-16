@@ -39,6 +39,7 @@ resources:
   - recyclarr.yaml
   - sabnzbd.yaml
   - torrent.yaml
+  - vm-resident-routes.yaml
   - romm.yaml
   - calibre-web.yaml
   - syncthing.yaml
