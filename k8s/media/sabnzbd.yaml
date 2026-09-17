@@ -1,6 +1,14 @@
 # sabnzbd — replaces the vm-backends stub Service of the same name (the *arr
 # download-client URLs never change). Watch folder now on NFS (Syncs/nzb),
 # fed by the in-cluster syncthing.
+#
+# Incomplete dir is NODE-LOCAL (sabnzbd-incomplete PVC), not NFS: the
+# __ADMIN__ pickles + article assembly are database-class state that must not
+# ride a share that can tear writes (2026-09-16: an Unraid NFS hiccup
+# NUL-filled the pickles → every retry hit "Error importing NzbFile" and
+# failed — see TROUBLESHOOTING.md §4). complete_dir stays on NFS; *arr only
+# ever sees complete paths, so compose path parity holds. local-path binds
+# WaitForFirstConsumer, i.e. on this pod's node (same node as the config PVC).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,6 +32,7 @@ spec:
             - {name: TZ, value: America/Chicago}
           volumeMounts:
             - {name: config, mountPath: /config}
+            - {name: incomplete, mountPath: /incomplete}
             - {name: rm, mountPath: /downloads, subPath: Downloads}
             - {name: rm, mountPath: /watch, subPath: Syncs/nzb}
           resources:
@@ -38,6 +47,8 @@ spec:
           persistentVolumeClaim: {claimName: sabnzbd-config}
         - name: rm
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+        - name: incomplete
+          persistentVolumeClaim: {claimName: sabnzbd-incomplete}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -46,6 +57,14 @@ spec:
   accessModes: [ReadWriteOnce]
   storageClassName: local-path
   resources: {requests: {storage: 5Gi}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: sabnzbd-incomplete}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources: {requests: {storage: 80Gi}}
 ---
 apiVersion: v1
 kind: Service

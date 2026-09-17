@@ -56,8 +56,11 @@ router port-forwards 80/443 back to 192.168.0.9.
 | Pod can't create a dir that `sudo mkdir` made fine | **ratchetmedia squashes root**; the sudo-made dir is anon-owned and uid 1000 can't write into it | `sudo rmdir` it, `mkdir` as dnewman (uid 1000), then copy |
 | App writes fail as root | Same root-squash | Run pods with PUID=1000 env (LSIO s6 drops privileges — keep compose parity) |
 | `subPath` mount errors | SubPath dir must already exist on the share | NFS test pod (INSTALL.md §5) lists every subPath before wave deploys |
+| NFS writes tear: files come back NUL-filled (`invalid load key, '\x00'` on reload), bursts of app-side I/O errors for ~1 min | **Failing array disk on the NAS** — Ratchet `sde` (WD80EFPX 8TB, array disk `bigmama8`) threw live read/write I/O errors from 2026-09-16 13:11; user-share I/O landing on it stalls/tears. Affected every NFS consumer, NOT a k8s regression | `ssh -p 2222 root@192.168.0.5 'dmesg -T | grep "I/O error"'` — replace the disk (parity rebuild). NB: Ratchet's `/var/log/syslog` has been 0 bytes since 09-16 (rsyslogd running but writing nothing) — use `dmesg`, not syslog, on the NAS
 
 Rule: **SQLite appdata stays on local-path PVCs, never NFS** (corruption risk);
+**sabnzbd's incomplete dir is node-local too** (see §4) — the `__ADMIN__`
+pickles + article assembly are the same class of must-not-tear state;
 media files on the NFS PVs at compose-identical in-container paths.
 
 ### local-path PVCs
@@ -109,6 +112,7 @@ container (both should show ProtonVPN); `ip link show tun0` for MTU.
 | Queue idle forever, log shows only `Found idle job` / `Resetting bad trylist` with **zero server lines** | **Parked servers**: sabnzbd deactivates news servers after a connection-failure burst and never retries | `kubectl -n media rollout restart deploy/sabnzbd` — servers reconnect, queue drains |
 | 100%-downloaded jobs stuck "Downloading" + an unrar running with ~0 CPU for ages | Direct Unpack outran a stalled download; unrar hung at a missing volume boundary holding the single post-proc slot | `kubectl -n media exec deploy/sabnzbd -- sh -c 'ps aux | grep unrar'` then kill the PID; restart sabnzbd |
 | "Article ... unavailable on all servers, discarding" | Retention misses — normal for old posts | Verify the release plays; let *arr import decide |
+| After an NFS hiccup: jobs keep failing every retry, log shows `Loading .../__ADMIN__/SABnzbd_nzf_* failed` → `UnpicklingError: invalid load key, '\x00'` → `Error importing NzbFile` → `Ending job`; *arr re-grabs in a loop until one retry lands | NFS server lost in-flight writes (see §3 torn-writes row) NUL-filling the job's admin pickles; the poisoned `__ADMIN__` state fails to import on every retry | Incomplete dir is now node-local (`sabnzbd-incomplete` PVC, `download_dir=/incomplete`) so in-flight state never rides NFS. For already-poisoned jobs: delete the job's dir under the old incomplete path so the next re-grab starts clean |
 
 ## 5. *arr stack
 
