@@ -64,3 +64,9 @@ Do not record transient tool failures or unverified guesses.
 **Root cause:** Context namespace silently became the target; "created" output looked like success. Per-file applies bypass every namespace guarantee the kustomization provides.
 **Prevention:** Always `kubectl apply -k k8s/<dir>` for these manifests; if a single file must be applied, `kubectl apply -n <ns> -f`. Treat any `created` (vs `configured`/`unchanged`) for an existing service as a red flag.
 **Verification:** Deleted the default-ns duplicates within ~25s (never went Ready, no watch-folder race); real IngressRoute held — `curl https://sabnzbd.thenewmans.casa` still 303s through the media-ns route; correct apply via `-k` succeeded.
+
+### [2026-09-17] Set sabnzbd size_limit assuming GB semantics; it parsed as 20 BYTES and force-paused the whole queue
+**Mistake:** Added `size_limit=20` intending a "pause when free disk < 20GB" floor for the new node-local incomplete dir. `size_limit` is actually a maximum-job-size guard whose OptionStr value parses as raw bytes ("20" = 20 bytes), so every added job failed `bytes > limit`, got flagged TOO LARGE, and was force-paused with LOW_PRIORITY.
+**Root cause:** Configured an unfamiliar app setting via API from memory instead of reading the app's behavior; verified the value echoed back but never exercised it with a real job after the change.
+**Prevention:** For app settings set outside the app's own UI, check the app's source/docs for the exact semantics (source was readable in-container at /app/sabnzbd), and prove the setting with a test job before walking away. The free-space floor knob is `download_free` (suffix syntax, e.g. "8G"; auto-pause + auto-resume, checked every few minutes).
+**Verification:** `size_limit=0`, `download_free=8G` persisted in sabnzbd.ini; all 18 force-paused jobs resumed via per-nzo_id API resume and are Downloading.
