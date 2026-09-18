@@ -71,6 +71,7 @@ media files on the NFS PVs at compose-identical in-container paths.
 | PVC `Pending` forever, no error | WaitForFirstConsumer — binds when a pod mounts | Normal; start the workload or a helper pod |
 | Pod can't schedule with its PVC (`node affinity conflict`) | local-path PVs are **node-pinned** to wherever they first bound | The pod must run on that node (scheduler handles it); a helper mounting the same PVC must too — this is why `migrate-pvc.sh` uses one helper per PVC |
 | Node lost = PVC lost | Directory lives on that node's disk | Accepted tradeoff (see INSTALL.md §12); etcd snapshots don't cover local-path data |
+| Need more local-path capacity (e.g. >100G sabnzbd packs) | Node disk too small — local-path PVCs are unquota'd, capacity = node fs | Grow the VM disk in Proxmox (`qm resize <vmid> scsi0 +NG`, online), then run `growpart /dev/sda 1 && resize2fs /dev/sda1` **via a privileged pod chrooted into the host** (manifest pattern in git history of this row's commit; used 2026-09-18: 116G→304G, online, no pod restarts). **`kubectl debug node/... -- chroot /host` is NOT privileged**: reads of /sys work (lsblk fine) but block-device writes fail `Operation not permitted` (no CAP_MKNOD/device-cgroup); `nsenter` doesn't bypass it (device access is cgroup-, not namespace-enforced) |
 
 ### Migrating data into PVCs
 
