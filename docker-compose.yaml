@@ -1,35 +1,23 @@
-# Full stack — all services on this VM (GPU services included: plex, tunarr, ollama).
+# VM residents only — the permanent GPU tier + edge + the torrent rollback
+# (qBittorrent/gluetun serves here until the k8s gluetun startup race is
+# solved; see compose/downloaders.yaml and k8s/media/torrent.yaml). Everything
+# else lives on the k8s cluster (ns media/apps/auth/linkwarden); the VM
+# Traefik still owns 80/443 and forwards migrated subdomains via
+# traefik-dyn/transition.yaml until the §9 edge cutover.
+#
+# Update flow for what's left here:
+#   docker compose pull && docker compose up -d
 include:
-  - compose/infrastructure.yaml
-  - compose/auth.yaml
-  - compose/downloaders.yaml
-  - compose/media-management.yaml
-  - compose/media-server.yaml
-  - compose/gaming.yaml
-  - compose/bookmarks.yaml
-  - compose/ai.yaml
-  - compose/utilities.yaml
+  - compose/infrastructure.yaml   # traefik (edge), cloudflare-ddns
+  - compose/media-server.yaml     # plex, tunarr (GPU)
+  - compose/ai.yaml               # ollama, perplexica (GPU)
+  - compose/utilities.yaml        # searxng + valkey (GPU-bound via perplexica)
+  - compose/gaming.yaml           # mcsmanager web/daemon
+  - compose/downloaders.yaml      # torrent rollback: gluetun + qbittorrent
 
 services:
-  # Host ports for LAN/admin access (Traefik handles subdomains internally)
-  authelia:
-    ports:
-      - "9091:9091"
-  radarr:
-    ports:
-      - "7878:7878"
-  sonarr:
-    ports:
-      - "8989:8989"
-  lidarr:
-    ports:
-      - "8686:8686"
-  titlecardmaker:
-    ports:
-      - "4242:4242"
-  sabnzbd:
-    ports:
-      - "8081:8080" # host 8080 is taken by the Traefik dashboard
+  # Host port for the qBittorrent WebUI on the vpn namespace — the k8s
+  # selector-less `torrent` Service Endpoints point at this VM:8181.
   vpn:
     ports:
-      - "8181:8181" # qBittorrent WebUI — it shares gluetun's network namespace
+      - "8181:8181"

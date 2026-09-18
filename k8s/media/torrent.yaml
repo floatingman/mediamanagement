@@ -14,7 +14,7 @@ metadata:
   name: torrent
   labels: {app: torrent}
 spec:
-  replicas: 1
+  replicas: 0 # ROLLED BACK to the Docker VM (see comment at the Service below)
   strategy: {type: Recreate} # never two pods fighting over the VPN identity
   selector: {matchLabels: {app: torrent}}
   template:
@@ -104,6 +104,8 @@ spec:
           persistentVolumeClaim: {claimName: gluetun-config}
         - name: config
           persistentVolumeClaim: {claimName: torrent-config}
+        - name: tun
+          hostPath: {path: /dev/net/tun, type: CharDevice}
         - name: rm
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
 ---

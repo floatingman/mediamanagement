@@ -1,3 +1,8 @@
+# qBittorrent via gluetun — SERVES FROM THIS VM by documented decision
+# (2026-09-16 rollback: k8s/media/torrent.yaml has the gluetun healthcheck
+# startup race; its Deployment is parked at replicas:0 for a future retry,
+# with a selector-less Service+Endpoints stub pointing at this VM's :8181).
+# sabnzbd used to live here too — migrated to k8s (incomplete dir node-local).
 services:
   vpn:
     image: qmcgaw/gluetun
@@ -23,23 +28,6 @@ services:
       # https://account.proton.me/u/0/vpn/WireGuard
       - VPN_PORT_FORWARDING=on
       - VPN_PORT_FORWARDING_PROVIDER=protonvpn
-    restart: unless-stopped
-
-  sabnzbd:
-    image: ghcr.io/linuxserver/sabnzbd
-    container_name: sabnzbd
-    environment:
-      - PUID=${PUID:-1000}
-      - PGID=${PGID:-1003}
-      - TZ=${TZ:-America/Chicago}
-    labels:
-      - traefik.enable=true
-      - traefik.http.services.sabnzbd.loadbalancer.server.port=8080
-      - traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.thenewmans.casa`)
-    volumes:
-      - ../appdata/sabnzbd:/config
-      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Downloads:/downloads
-      - ../../syncs/Sync/nzb:/watch
     restart: unless-stopped
 
   torrent:
