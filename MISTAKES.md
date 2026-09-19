@@ -62,7 +62,7 @@ Do not record transient tool failures or unverified guesses.
 ### [2026-09-17] kubectl apply -f on a kustomize-namespaced manifest created duplicates in default ns
 **Mistake:** Applied `k8s/media/sabnzbd.yaml` with `kubectl apply -f` (no `-n`, no `-k`) — the file carries no explicit namespace (the kustomization injects `media`), so it created a parallel sabnzbd Deployment/PVCs/Service/IngressRoute in the `default` namespace, including a duplicate `Host(sabnzbd.thenewmans.casa)` IngressRoute (the exact duplicate-Host-rule hazard TROUBLESHOOTING.md §0 warns about).
 **Root cause:** Context namespace silently became the target; "created" output looked like success. Per-file applies bypass every namespace guarantee the kustomization provides.
-**Prevention:** Always `kubectl apply -k k8s/<dir>` for these manifests; if a single file must be applied, `kubectl apply -n <ns> -f`. Treat any `created` (vs `configured`/`unchanged`) for an existing service as a red flag.
+**Prevention:** Always `kubectl apply -k k8s/<dir>` for these manifests; if a single file must be applied, `kubectl apply -n <ns> -f`. Treat any `created` (vs `configured`/`unchanged`) for an existing service as a red flag. **Repeat 2026-09-19** (exportarr.yaml, same cause): standalone manifests under k8s/ now carry explicit `namespace:` metadata so a bare `kubectl apply -f` lands correctly anyway.
 **Verification:** Deleted the default-ns duplicates within ~25s (never went Ready, no watch-folder race); real IngressRoute held — `curl https://sabnzbd.thenewmans.casa` still 303s through the media-ns route; correct apply via `-k` succeeded.
 
 ### [2026-09-17] Set sabnzbd size_limit assuming GB semantics; it parsed as 20 BYTES and force-paused the whole queue

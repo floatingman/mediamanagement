@@ -1,0 +1,162 @@
+# exportarr (ghcr.io/onedr0p/exportarr) — one instance per *arr app +
+# sabnzbd, running in ns monitoring and scraping the ns-media services via
+# in-cluster DNS. API keys live in secret exportarr-keys (out-of-band).
+# ServiceMonitors carry label release=monitoring to match the Prometheus
+# release's serviceMonitorSelector.
+#
+# Refresh keys after rotating any app's API key:
+#   kubectl -n monitoring create secret generic exportarr-keys \
+#     --from-literal=radarr=... --from-literal=sonarr=... \
+#     --from-literal=lidarr=... --from-literal=sabnzbd=... \
+#     --dry-run=client -o yaml | kubectl apply -f -
+#   kubectl -n monitoring rollout restart deploy -l app.kubernetes.io/name=exportarr
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: exportarr-radarr, namespace: monitoring, labels: {app: exportarr-radarr, app.kubernetes.io/name: exportarr}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: exportarr-radarr}}
+  template:
+    metadata: {labels: {app: exportarr-radarr, app.kubernetes.io/name: exportarr}}
+    spec:
+      containers:
+        - name: exportarr
+          image: ghcr.io/onedr0p/exportarr:latest
+          args: [radarr]
+          env:
+            - {name: PORT, value: "9707"}
+            - {name: URL, value: http://radarr.media.svc.cluster.local:7878}
+            - {name: APIKEY, valueFrom: {secretKeyRef: {name: exportarr-keys, key: radarr}}}
+            # ENABLE_ADDITIONAL_METRICS off on ALL apps: the per-item library
+            # walks OOM (radarr/lidarr) or exceed the scrape timeout (sonarr);
+            # alert rules only use core endpoints (status/health)
+          ports: [{containerPort: 9707, name: metrics}]
+          resources:
+            requests: {cpu: 5m, memory: 32Mi}
+            limits: {memory: 128Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: exportarr-radarr, namespace: monitoring, labels: {app: exportarr-radarr}}
+spec:
+  selector: {app: exportarr-radarr}
+  ports: [{port: 9707, name: metrics}]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata: {name: exportarr-radarr, namespace: monitoring, labels: {release: monitoring}}
+spec:
+  selector: {matchLabels: {app: exportarr-radarr}}
+  endpoints: [{port: metrics, interval: 120s, scrapeTimeout: 60s}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: exportarr-sonarr, namespace: monitoring, labels: {app: exportarr-sonarr, app.kubernetes.io/name: exportarr}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: exportarr-sonarr}}
+  template:
+    metadata: {labels: {app: exportarr-sonarr, app.kubernetes.io/name: exportarr}}
+    spec:
+      containers:
+        - name: exportarr
+          image: ghcr.io/onedr0p/exportarr:latest
+          args: [sonarr]
+          env:
+            - {name: PORT, value: "9708"}
+            - {name: URL, value: http://sonarr.media.svc.cluster.local:8989}
+            - {name: APIKEY, valueFrom: {secretKeyRef: {name: exportarr-keys, key: sonarr}}}
+            # ENABLE_ADDITIONAL_METRICS off: per-series API walks on this library
+            # exceed the 30s scrape timeout; alert rules only need core metrics
+          ports: [{containerPort: 9708, name: metrics}]
+          resources:
+            requests: {cpu: 5m, memory: 32Mi}
+            limits: {memory: 128Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: exportarr-sonarr, namespace: monitoring, labels: {app: exportarr-sonarr}}
+spec:
+  selector: {app: exportarr-sonarr}
+  ports: [{port: 9708, name: metrics}]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata: {name: exportarr-sonarr, namespace: monitoring, labels: {release: monitoring}}
+spec:
+  selector: {matchLabels: {app: exportarr-sonarr}}
+  endpoints: [{port: metrics, interval: 120s, scrapeTimeout: 60s}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: exportarr-lidarr, namespace: monitoring, labels: {app: exportarr-lidarr, app.kubernetes.io/name: exportarr}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: exportarr-lidarr}}
+  template:
+    metadata: {labels: {app: exportarr-lidarr, app.kubernetes.io/name: exportarr}}
+    spec:
+      containers:
+        - name: exportarr
+          image: ghcr.io/onedr0p/exportarr:latest
+          args: [lidarr]
+          env:
+            - {name: PORT, value: "9709"}
+            - {name: URL, value: http://lidarr.media.svc.cluster.local:8686}
+            - {name: APIKEY, valueFrom: {secretKeyRef: {name: exportarr-keys, key: lidarr}}}
+            # ENABLE_ADDITIONAL_METRICS off (see sonarr); library is the largest
+          ports: [{containerPort: 9709, name: metrics}]
+          resources:
+            requests: {cpu: 5m, memory: 64Mi}
+            limits: {memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: exportarr-lidarr, namespace: monitoring, labels: {app: exportarr-lidarr}}
+spec:
+  selector: {app: exportarr-lidarr}
+  ports: [{port: 9709, name: metrics}]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata: {name: exportarr-lidarr, namespace: monitoring, labels: {release: monitoring}}
+spec:
+  selector: {matchLabels: {app: exportarr-lidarr}}
+  endpoints: [{port: metrics, interval: 120s, scrapeTimeout: 60s}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: exportarr-sabnzbd, namespace: monitoring, labels: {app: exportarr-sabnzbd, app.kubernetes.io/name: exportarr}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: exportarr-sabnzbd}}
+  template:
+    metadata: {labels: {app: exportarr-sabnzbd, app.kubernetes.io/name: exportarr}}
+    spec:
+      containers:
+        - name: exportarr
+          image: ghcr.io/onedr0p/exportarr:latest
+          args: [sabnzbd]
+          env:
+            - {name: PORT, value: "9710"}
+            - {name: URL, value: http://sabnzbd.media.svc.cluster.local:8080}
+            - {name: APIKEY, valueFrom: {secretKeyRef: {name: exportarr-keys, key: sabnzbd}}}
+          ports: [{containerPort: 9710, name: metrics}]
+          resources:
+            requests: {cpu: 5m, memory: 32Mi}
+            limits: {memory: 128Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: exportarr-sabnzbd, namespace: monitoring, labels: {app: exportarr-sabnzbd}}
+spec:
+  selector: {app: exportarr-sabnzbd}
+  ports: [{port: 9710, name: metrics}]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata: {name: exportarr-sabnzbd, namespace: monitoring, labels: {release: monitoring}}
+spec:
+  selector: {matchLabels: {app: exportarr-sabnzbd}}
+  endpoints: [{port: metrics, interval: 120s, scrapeTimeout: 60s}]

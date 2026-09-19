@@ -1,0 +1,61 @@
+# NFS staleness probe — the 2026-09-17/18 failure class: an Unraid/Synology
+# array stop/start (or NAS hiccup) leaves every k8s NFS mount returning
+# ESTALE ("Stale file handle") and the CSI mounts do NOT self-heal. Node
+# metrics can't see this; only a real I/O attempt on the mount can.
+#
+# Runs in ns MEDIA because that's where the NFS PVCs are bound; pushes
+# results to the pushgateway in ns monitoring (grouping key job=nfs-probe,
+# each run REPLACES the previous metrics — staleness is detected via the
+# timestamp age, not accumulation).
+#
+#   ratchetmedia    : write + read-back in Downloads (also catches torn
+#                     writes; write perms are proven OK there)
+#   perceptormedia  : read-only stat (write perms not guaranteed on library
+#                     shares; ESTALE fails lookups just the same)
+#
+# Fires via the media-stack PrometheusRule: NFSProbeStale (probe failing) and
+# NFSProbeSilent (probe itself stopped running >15m).
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: nfs-probe, namespace: media}
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 150
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: probe
+              image: curlimages/curl:8.11.1
+              command: [sh, -ec]
+              args:
+                - |
+                  set -u
+                  TS=$(date +%s)
+                  : > /tmp/metrics
+                  OK=0
+                  if echo "$TS" > /ratchet/.nfs-probe 2>/dev/null \
+                     && [ "$(cat /ratchet/.nfs-probe 2>/dev/null)" = "$TS" ]; then
+                    OK=1
+                  fi
+                  printf 'nfs_probe_success{share="ratchetmedia"} %s\n' "$OK" >> /tmp/metrics
+                  OK=0
+                  if timeout 15 ls /perceptor >/dev/null 2>&1; then OK=1; fi
+                  printf 'nfs_probe_success{share="perceptormedia"} %s\n' "$OK" >> /tmp/metrics
+                  printf 'nfs_probe_timestamp_seconds %s\n' "$TS" >> /tmp/metrics
+                  curl -sf --max-time 15 -X POST \
+                    --data-binary @/tmp/metrics \
+                    http://pushgateway.monitoring.svc.cluster.local:9091/metrics/job/nfs-probe
+              volumeMounts:
+                - {name: rm, mountPath: /ratchet, subPath: Downloads}
+                - {name: pm, mountPath: /perceptor, subPath: Video/TV}
+          volumes:
+            - name: rm
+              persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+            - name: pm
+              persistentVolumeClaim: {claimName: nfs-perceptormedia}

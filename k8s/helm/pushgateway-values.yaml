@@ -1,0 +1,21 @@
+# prometheus-pushgateway — receives pushed metrics from batch/CronJob probes
+# (the NFS staleness probe). No persistence: a restart clears pushed metrics,
+# the next probe run (<=5m) repopulates them.
+#
+#   helm upgrade --install pushgateway prometheus-community/prometheus-pushgateway \
+#     -n monitoring -f k8s/helm/pushgateway-values.yaml
+#
+# serviceMonitor.additionalLabels must carry release=monitoring to match the
+# kube-prometheus-stack Prometheus's serviceMonitorSelector.
+resources:
+  requests: {cpu: 10m, memory: 32Mi}
+  limits: {memory: 96Mi}
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  additionalLabels:
+    release: monitoring
+
+# Match the service name the probe scripts push to.
+fullnameOverride: pushgateway

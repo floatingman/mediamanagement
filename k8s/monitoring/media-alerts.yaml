@@ -1,0 +1,63 @@
+# Media-stack alert rules — the failure classes this stack actually
+# demonstrated (see TROUBLESHOOTING.md), which the default k8s rule groups
+# don't cover: NFS mounts going stale, *arr backends dying, sabnzbd wedged
+# paused. Metric names verified against live exportarr output 2026-09-19.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: media-stack
+  namespace: monitoring
+  labels: {release: monitoring}
+spec:
+  groups:
+    - name: media-stack
+      rules:
+        - alert: NFSProbeStale
+          expr: nfs_probe_success == 0
+          for: 2m
+          labels: {severity: critical}
+          annotations:
+            summary: "NFS mount {{ $labels.share }} is stale/unwritable from k8s"
+            description: >-
+              The probe pod cannot complete I/O against {{ $labels.share }}.
+              If the NAS had an array stop/start, the k8s CSI mounts will not
+              self-heal — see TROUBLESHOOTING.md §3 (rollout restart the
+              nfs-ratchetmedia consumers).
+        - alert: NFSProbeSilent
+          expr: time() - nfs_probe_timestamp_seconds > 900
+          labels: {severity: warning}
+          annotations:
+            summary: "NFS probe has not reported for 15m"
+            description: >-
+              CronJob nfs-probe (ns media) isn't pushing metrics — check
+              `kubectl -n media get jobs` and the pushgateway pod.
+        - alert: SonarrSystemDown
+          expr: sonarr_system_status != 1
+          for: 5m
+          labels: {severity: critical}
+          annotations: {summary: "Sonarr backend is not reporting healthy"}
+        - alert: RadarrSystemDown
+          expr: radarr_system_status != 1
+          for: 5m
+          labels: {severity: critical}
+          annotations: {summary: "Radarr backend is not reporting healthy"}
+        - alert: LidarrSystemDown
+          expr: lidarr_system_status != 1
+          for: 5m
+          labels: {severity: critical}
+          annotations: {summary: "Lidarr backend is not reporting healthy"}
+        - alert: SabnzbdStuckPaused
+          expr: sabnzbd_paused == 1
+          for: 45m
+          labels: {severity: warning}
+          annotations:
+            summary: "Sabnzbd has been paused for 45m"
+            description: >-
+              Long pauses usually mean the download_free floor tripped (node
+              disk full on /incomplete) or a stuck post-process — check the
+              queue UI before resuming.
+        - alert: ArrSystemHealthIssues
+          expr: sonarr_system_health_issues > 0 or radarr_system_health_issues > 0 or lidarr_system_health_issues > 0
+          for: 30m
+          labels: {severity: info}
+          annotations: {summary: "{{ $labels.job }} reports health issues"}
