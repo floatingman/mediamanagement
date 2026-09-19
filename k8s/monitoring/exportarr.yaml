@@ -33,8 +33,8 @@ spec:
             # alert rules only use core endpoints (status/health)
           ports: [{containerPort: 9707, name: metrics}]
           resources:
-            requests: {cpu: 5m, memory: 32Mi}
-            limits: {memory: 128Mi}
+            requests: {cpu: 5m, memory: 64Mi}
+            limits: {memory: 256Mi} # core set includes the /movie walk — OOMs at 128Mi
 ---
 apiVersion: v1
 kind: Service

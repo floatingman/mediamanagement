@@ -1,0 +1,1399 @@
+# Media Stack dashboard for Grafana — loaded by the kiwigrid sidecar
+# (grafana.sidecar.dashboards.enabled: true in kube-prometheus-stack-values).
+# Every panel query was verified against live exporter output 2026-09-19;
+# exportarr runs WITHOUT additional metrics, so only core series are used
+# (sonarr exposes no queue_total in its core set; radarr movie counts are core).
+# Edit the JSON below and `kubectl apply -n monitoring -f` to change panels.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: media-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  media-stack.json: |
+    {
+     "uid": "media-stack",
+     "title": "Media Stack",
+     "schemaVersion": 39,
+     "version": 1,
+     "refresh": "1m",
+     "time": {
+      "from": "now-24h",
+      "to": "now"
+     },
+     "tags": [
+      "media",
+      "exportarr"
+     ],
+     "timezone": "browser",
+     "panels": [
+      {
+       "id": 100,
+       "title": "Sonarr",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+       },
+       "targets": [
+        {
+         "expr": "sonarr_system_status",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short",
+         "mappings": [
+          {
+           "type": "value",
+           "options": {
+            "0": {
+             "text": "DOWN",
+             "color": "red"
+            },
+            "1": {
+             "text": "UP",
+             "color": "green"
+            }
+           }
+          }
+         ],
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "red",
+            "value": null
+           },
+           {
+            "color": "green",
+            "value": 0.5
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 101,
+       "title": "Radarr",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+       },
+       "targets": [
+        {
+         "expr": "radarr_system_status",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short",
+         "mappings": [
+          {
+           "type": "value",
+           "options": {
+            "0": {
+             "text": "DOWN",
+             "color": "red"
+            },
+            "1": {
+             "text": "UP",
+             "color": "green"
+            }
+           }
+          }
+         ],
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "red",
+            "value": null
+           },
+           {
+            "color": "green",
+            "value": 0.5
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 102,
+       "title": "Lidarr",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+       },
+       "targets": [
+        {
+         "expr": "lidarr_system_status",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short",
+         "mappings": [
+          {
+           "type": "value",
+           "options": {
+            "0": {
+             "text": "DOWN",
+             "color": "red"
+            },
+            "1": {
+             "text": "UP",
+             "color": "green"
+            }
+           }
+          }
+         ],
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "red",
+            "value": null
+           },
+           {
+            "color": "green",
+            "value": 0.5
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 103,
+       "title": "Sabnzbd",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+       },
+       "targets": [
+        {
+         "expr": "sabnzbd_info",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short",
+         "mappings": [
+          {
+           "type": "value",
+           "options": {
+            "0": {
+             "text": "DOWN",
+             "color": "red"
+            },
+            "1": {
+             "text": "UP",
+             "color": "green"
+            }
+           }
+          }
+         ],
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "red",
+            "value": null
+           },
+           {
+            "color": "green",
+            "value": 0.5
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 104,
+       "title": "NFS ratchet",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+       },
+       "targets": [
+        {
+         "expr": "nfs_probe_success{share=\"ratchetmedia\"}",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short",
+         "mappings": [
+          {
+           "type": "value",
+           "options": {
+            "0": {
+             "text": "DOWN",
+             "color": "red"
+            },
+            "1": {
+             "text": "UP",
+             "color": "green"
+            }
+           }
+          }
+         ],
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "red",
+            "value": null
+           },
+           {
+            "color": "green",
+            "value": 0.5
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 105,
+       "title": "NFS perceptor",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+       },
+       "targets": [
+        {
+         "expr": "nfs_probe_success{share=\"perceptormedia\"}",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short",
+         "mappings": [
+          {
+           "type": "value",
+           "options": {
+            "0": {
+             "text": "DOWN",
+             "color": "red"
+            },
+            "1": {
+             "text": "UP",
+             "color": "green"
+            }
+           }
+          }
+         ],
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "red",
+            "value": null
+           },
+           {
+            "color": "green",
+            "value": 0.5
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 201,
+       "title": "Sabnzbd download speed",
+       "type": "timeseries",
+       "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+       },
+       "targets": [
+        {
+         "expr": "sabnzbd_speed_bps",
+         "legendFormat": "speed",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "Bps",
+         "custom": {
+          "fillOpacity": 15,
+          "lineWidth": 2
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "legend": {
+         "displayMode": "list",
+         "placement": "bottom"
+        },
+        "tooltip": {
+         "mode": "multi"
+        }
+       }
+      },
+      {
+       "id": 202,
+       "title": "Downloaded throughput (5m rate)",
+       "type": "timeseries",
+       "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+       },
+       "targets": [
+        {
+         "expr": "rate(sabnzbd_downloaded_bytes[5m])",
+         "legendFormat": "bytes/s",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "Bps",
+         "custom": {
+          "fillOpacity": 15,
+          "lineWidth": 2
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "legend": {
+         "displayMode": "list",
+         "placement": "bottom"
+        },
+        "tooltip": {
+         "mode": "multi"
+        }
+       }
+      },
+      {
+       "id": 300,
+       "title": "Queue length",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 12
+       },
+       "targets": [
+        {
+         "expr": "sabnzbd_queue_length",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 301,
+       "title": "Queue remaining",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 12
+       },
+       "targets": [
+        {
+         "expr": "sabnzbd_remaining_bytes",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "bytes"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 302,
+       "title": "ETA",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 12
+       },
+       "targets": [
+        {
+         "expr": "sabnzbd_time_estimate_seconds",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "s"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 303,
+       "title": "Queue warnings",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 12
+       },
+       "targets": [
+        {
+         "expr": "sabnzbd_queue_warnings",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 304,
+       "title": "Radarr queue",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 12
+       },
+       "targets": [
+        {
+         "expr": "radarr_queue_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 305,
+       "title": "Lidarr queue",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 12
+       },
+       "targets": [
+        {
+         "expr": "lidarr_queue_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 401,
+       "title": "Complete dir (NFS) used %",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 16
+       },
+       "targets": [
+        {
+         "expr": "sabnzbd_disk_used_bytes{folder=\"complete\"} / sabnzbd_disk_total_bytes{folder=\"complete\"} * 100",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "percent"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 402,
+       "title": "Incomplete dir (node-local) used %",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 16
+       },
+       "targets": [
+        {
+         "expr": "sabnzbd_disk_used_bytes{folder=\"download\"} / sabnzbd_disk_total_bytes{folder=\"download\"} * 100",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "percent"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 403,
+       "title": "Sonarr root free",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 16
+       },
+       "targets": [
+        {
+         "expr": "sonarr_rootfolder_freespace_bytes",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "bytes"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 404,
+       "title": "Radarr root free",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 16
+       },
+       "targets": [
+        {
+         "expr": "radarr_rootfolder_freespace_bytes",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "bytes"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 500,
+       "title": "Radarr movies",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 0,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "radarr_movie_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 501,
+       "title": "Radarr missing",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 2,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "radarr_movie_missing_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 502,
+       "title": "Radarr wanted",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 4,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "radarr_movie_wanted_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 503,
+       "title": "Radarr qualities",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 6,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "radarr_movie_quality_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 504,
+       "title": "Sonarr series",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 8,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "sonarr_series_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 505,
+       "title": "Sonarr episodes",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 10,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "sonarr_episode_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 506,
+       "title": "Sonarr missing eps",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 12,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "sonarr_episode_missing_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 507,
+       "title": "Sonarr cutoff unmet",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 14,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "sonarr_episode_cutoff_unmet_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 508,
+       "title": "Lidarr artists",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 16,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "lidarr_artists_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 509,
+       "title": "Lidarr albums",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 18,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "lidarr_albums_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 510,
+       "title": "Lidarr missing albums",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 20,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "lidarr_albums_missing_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 511,
+       "title": "Lidarr songs",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 2,
+        "x": 22,
+        "y": 20
+       },
+       "targets": [
+        {
+         "expr": "lidarr_songs_total",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short"
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 600,
+       "title": "Sonarr health issues",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 24
+       },
+       "targets": [
+        {
+         "expr": "sonarr_system_health_issues",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short",
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "green",
+            "value": null
+           },
+           {
+            "color": "orange",
+            "value": 1
+           },
+           {
+            "color": "red",
+            "value": 5
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 601,
+       "title": "Radarr health issues",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 24
+       },
+       "targets": [
+        {
+         "expr": "radarr_system_health_issues",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short",
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "green",
+            "value": null
+           },
+           {
+            "color": "orange",
+            "value": 1
+           },
+           {
+            "color": "red",
+            "value": 5
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 602,
+       "title": "Lidarr health issues",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 24
+       },
+       "targets": [
+        {
+         "expr": "lidarr_system_health_issues",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "short",
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "green",
+            "value": null
+           },
+           {
+            "color": "orange",
+            "value": 1
+           },
+           {
+            "color": "red",
+            "value": 5
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      },
+      {
+       "id": 603,
+       "title": "NFS probe age",
+       "type": "stat",
+       "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 24
+       },
+       "targets": [
+        {
+         "expr": "time() - nfs_probe_timestamp_seconds",
+         "refId": "A"
+        }
+       ],
+       "fieldConfig": {
+        "defaults": {
+         "unit": "s",
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "green",
+            "value": null
+           },
+           {
+            "color": "orange",
+            "value": 300
+           },
+           {
+            "color": "red",
+            "value": 600
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "reduceOptions": {
+         "calcs": [
+          "lastNotNull"
+         ]
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto_and_name"
+       }
+      }
+     ]
+    }
