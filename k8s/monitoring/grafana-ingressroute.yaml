@@ -1,0 +1,16 @@
+# Grafana UI for the monitoring stack (k8s/helm/kube-prometheus-stack-values.yaml).
+# Exposed like every other migrated service: k8s-edge IngressRoute + a
+# matching vm-forward in traefik-dyn/transition.yaml.
+# Login: admin + secret grafana-admin (key admin-password).
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`grafana.thenewmans.casa`)
+      kind: Rule
+      services: [{name: monitoring-grafana, port: 80}]
+  tls: {certResolver: letsencrypt}

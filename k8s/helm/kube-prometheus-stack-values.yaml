@@ -1,0 +1,78 @@
+# kube-prometheus-stack — upstream Prometheus + Grafana + Alertmanager +
+# node-exporter + kube-state-metrics for the 3-node media cluster.
+# Deliberately NOT Rancher's repackaged chart: this way Renovate/update-day.sh
+# track upstream versions and nothing depends on the Rancher VM.
+#
+# Install / upgrade:
+#   helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+#     -n monitoring -f k8s/helm/kube-prometheus-stack-values.yaml
+#
+# Secrets (created out-of-band, never committed):
+#   alertmanager-main  (key alertmanager.yaml) — receiver config; currently a
+#     null receiver ("pending-telegram") until the bot token is wired in.
+#   grafana-admin      (key admin-password)    — Grafana login.
+# Storage: all TSDB/dashboards on local-path PVCs (node-pinned; losing a node
+# loses only that node's monitoring history — fine for this stack).
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    resources:
+      requests: {cpu: 200m, memory: 400Mi}
+      limits: {memory: 2Gi}
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          resources: {requests: {storage: 30Gi}}
+
+alertmanager:
+  alertmanagerSpec:
+    useExistingSecret: true
+    configSecret: alertmanager-main
+    resources:
+      requests: {cpu: 50m, memory: 128Mi}
+      limits: {memory: 256Mi}
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          resources: {requests: {storage: 2Gi}}
+
+  # Password: the chart auto-generates and mounts a secret (no value in git).
+  # Retrieve: kubectl -n monitoring get secret -l app.kubernetes.io/component=admin-secret \
+  #   -o jsonpath='{.items[0].data.admin-password}' | base64 -d
+  adminUser: admin
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 5Gi
+  resources:
+    requests: {cpu: 50m, memory: 192Mi}
+    limits: {memory: 512Mi}
+  ingress:
+    enabled: false # exposed via IngressRoute CRD — k8s/monitoring/
+  sidecar:
+    dashboards:
+      enabled: true
+
+prometheusOperator:
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 512Mi}
+
+kube-state-metrics:
+  resources:
+    requests: {cpu: 20m, memory: 64Mi}
+    limits: {memory: 192Mi}
+
+prometheus-node-exporter:
+  resources:
+    requests: {cpu: 20m, memory: 32Mi}
+    limits: {memory: 96Mi}
+
+# Default rule groups (NodeFilesystemAlmostOutOfSpace, KubePodCrashLooping,
+# KubeJobFailed, NodeDown, ...) stay enabled — they cover this cluster's real
+# incident classes. Custom media-stack rules get added as PrometheusRule
+# manifests in k8s/monitoring/ later.
+defaultRules:
+  create: true

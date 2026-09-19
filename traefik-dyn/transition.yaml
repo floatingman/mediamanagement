@@ -70,6 +70,7 @@ http:
     sync-k8s:          {rule: Host(`sync.thenewmans.casa`),          entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
     romm-k8s:         {rule: Host(`romm.thenewmans.casa`),         entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
     calibre-k8s:      {rule: Host(`calibre.thenewmans.casa`),      entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
+    grafana-k8s:       {rule: Host(`grafana.thenewmans.casa`),       entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
   services:
     k8s-edge:
       loadBalancer:
