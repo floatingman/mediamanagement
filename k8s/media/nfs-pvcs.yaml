@@ -48,3 +48,15 @@ spec:
   resources:
     requests:
       storage: 40Ti
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-synology-downloads
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: nfs-synology-downloads
+  resources:
+    requests:
+      storage: 40Ti

@@ -26,7 +26,7 @@ spec:
             - {name: config, mountPath: /config}
             - {name: pm, mountPath: /media, subPath: Video/Movies}
             - {name: rm, mountPath: /ratchetmedia, subPath: Movies}
-            - {name: rm, mountPath: /downloads, subPath: Downloads}
+            - {name: syndl, mountPath: /downloads} # Synology volume3/downloads since 2026-09-19
             - {name: rm, mountPath: /torrentdownloads, subPath: Downloads/torrents/complete}
           resources:
             requests: {cpu: 100m, memory: 256Mi}
@@ -42,6 +42,8 @@ spec:
           persistentVolumeClaim: {claimName: nfs-perceptormedia}
         - name: rm
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+        - name: syndl
+          persistentVolumeClaim: {claimName: nfs-synology-downloads}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

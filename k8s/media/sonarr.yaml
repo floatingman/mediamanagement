@@ -25,7 +25,7 @@ spec:
             - {name: config, mountPath: /config}
             - {name: pm, mountPath: /media, subPath: Video/TV}
             - {name: rm, mountPath: /ratchetmedia, subPath: TVShows}
-            - {name: rm, mountPath: /downloads, subPath: Downloads}
+            - {name: syndl, mountPath: /downloads} # Synology volume3/downloads since 2026-09-19
           resources:
             requests: {cpu: 100m, memory: 256Mi}
             limits: {memory: 2Gi}
@@ -40,6 +40,8 @@ spec:
           persistentVolumeClaim: {claimName: nfs-perceptormedia}
         - name: rm
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+        - name: syndl
+          persistentVolumeClaim: {claimName: nfs-synology-downloads}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

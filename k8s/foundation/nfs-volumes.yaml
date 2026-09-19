@@ -95,3 +95,24 @@ spec:
     volumeAttributes:
       server: 192.168.0.6
       share: /volume3/Backups
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-synology-downloads # Synology volume3/downloads: usenet staging (moved off the degraded Ratchet btrfs pool, 2026-09-19)
+spec:
+  capacity:
+    storage: 40Ti
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    name: nfs-synology-downloads
+    namespace: media
+  mountOptions: [vers=3, hard, noatime, rsize=1048576, wsize=1048576, timeo=100, retrans=3]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: 192.168.0.6-volume3-downloads
+    volumeAttributes:
+      server: 192.168.0.6
+      share: /volume3/downloads

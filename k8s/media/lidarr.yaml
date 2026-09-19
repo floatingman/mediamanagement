@@ -24,7 +24,7 @@ spec:
           volumeMounts:
             - {name: config, mountPath: /config}
             - {name: pme, mountPath: /media, subPath: Audio/music}
-            - {name: rm, mountPath: /downloads, subPath: Downloads}
+            - {name: syndl, mountPath: /downloads} # Synology volume3/downloads since 2026-09-19
           resources:
             requests: {cpu: 100m, memory: 256Mi}
             limits: {memory: 2Gi}
@@ -37,8 +37,8 @@ spec:
           persistentVolumeClaim: {claimName: lidarr-config}
         - name: pme
           persistentVolumeClaim: {claimName: nfs-perceptormediaexpansion}
-        - name: rm
-          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+        - name: syndl
+          persistentVolumeClaim: {claimName: nfs-synology-downloads}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

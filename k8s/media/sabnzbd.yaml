@@ -33,7 +33,7 @@ spec:
           volumeMounts:
             - {name: config, mountPath: /config}
             - {name: incomplete, mountPath: /incomplete}
-            - {name: rm, mountPath: /downloads, subPath: Downloads}
+            - {name: syndl, mountPath: /downloads} # dedicated Synology volume3/downloads share since 2026-09-19 (NFS squash: map all users to admin, same as the other shares; tree nzb/complete pre-made 0777)
             - {name: rm, mountPath: /watch, subPath: Syncs/nzb}
           resources:
             requests: {cpu: 100m, memory: 256Mi}
@@ -49,6 +49,8 @@ spec:
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
         - name: incomplete
           persistentVolumeClaim: {claimName: sabnzbd-incomplete}
+        - name: syndl
+          persistentVolumeClaim: {claimName: nfs-synology-downloads}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
