@@ -25,6 +25,7 @@ configMapGenerator:
 resources:
   - namespace.yaml
   - nfs-pvcs.yaml
+  - radarr.yaml # was here before 1eee020 accidentally SWAPPED it for vm-backends.yaml instead of adding — every apply -k silently skipped radarr for days
   - sonarr.yaml
   - lidarr.yaml
   - bazarr.yaml
