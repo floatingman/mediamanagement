@@ -8,9 +8,13 @@
 #     -n monitoring -f k8s/helm/kube-prometheus-stack-values.yaml
 #
 # Secrets (created out-of-band, never committed):
-#   alertmanager-main  (key alertmanager.yaml) — receiver config; currently a
-#     null receiver ("pending-telegram") until the bot token is wired in.
-#   grafana-admin      (key admin-password)    — Grafana login.
+#   alertmanager-main  (key alertmanager.yaml) — receiver config. Telegram
+#     wired 2026-09-19 (bot + chat id live only in that secret). After editing
+#     it, bounce the pod — the operator does NOT hot-watch the source secret:
+#     kubectl -n monitoring delete pod alertmanager-monitoring-kube-prometheus-alertmanager-0
+#     (Also: the operator's generated secret stores alertmanager.yaml GZIPPED
+#     — grepping .data.alertmanager.yaml decodes garbage; check the live
+#     config via the API: /api/v2/status → config.original.)
 # Storage: all TSDB/dashboards on local-path PVCs (node-pinned; losing a node
 # loses only that node's monitoring history — fine for this stack).
 prometheus:
