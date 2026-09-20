@@ -1,10 +1,20 @@
 # Bind the pre-claimed static NFS PVs from k8s/foundation/nfs-volumes.yaml
 # into this namespace. RWX — several pods mount the same shares, exactly like
 # the compose stack mounts the same NFS paths.
+#
+# excluded_from_alerts: "true" — the upstream KubePersistentVolumeFillingUp
+# rules (percent-based: critical <3% free, warning <15% + predicted to fill in
+# 4d) have this exact opt-out hook. Percent is meaningless on these shares:
+# they report the WHOLE NAS volume's df, so 3% free on perceptormedia is
+# ~3TiB. Absolute-bytes replacements (NfsVolumeFillingUp <1TiB warn,
+# NfsVolumeCriticallyFull <256GiB crit) live in
+# k8s/monitoring/media-alerts.yaml. Requires the kube-state-metrics
+# metricLabelsAllowlist in k8s/helm/kube-prometheus-stack-values.yaml.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: nfs-ratchetmedia
+  labels: {excluded_from_alerts: "true"}
 spec:
   accessModes: [ReadWriteMany]
   storageClassName: ""
@@ -17,6 +27,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: nfs-perceptormedia
+  labels: {excluded_from_alerts: "true"}
 spec:
   accessModes: [ReadWriteMany]
   storageClassName: ""
@@ -29,6 +40,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: nfs-backups
+  labels: {excluded_from_alerts: "true"}
 spec:
   accessModes: [ReadWriteMany]
   storageClassName: ""
@@ -41,6 +53,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: nfs-perceptormediaexpansion
+  labels: {excluded_from_alerts: "true"}
 spec:
   accessModes: [ReadWriteMany]
   storageClassName: ""
@@ -53,6 +66,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: nfs-synology-downloads
+  labels: {excluded_from_alerts: "true"}
 spec:
   accessModes: [ReadWriteMany]
   storageClassName: ""

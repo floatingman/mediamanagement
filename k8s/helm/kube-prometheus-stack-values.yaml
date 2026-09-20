@@ -65,6 +65,13 @@ prometheusOperator:
     limits: {memory: 512Mi}
 
 kube-state-metrics:
+  # Expose PVC labels (kube_persistentvolumeclaim_labels) so the default
+  # KubePersistentVolumeFillingUp rules honor the excluded_from_alerts
+  # opt-out — set on the multi-TB NFS PVCs (k8s/media/nfs-pvcs.yaml), whose
+  # percent-based "filling up" semantics are noise (3% of volume1 = ~3TiB).
+  # Absolute-bytes replacements live in k8s/monitoring/media-alerts.yaml.
+  metricLabelsAllowlist:
+    - persistentvolumeclaims=[*]
   resources:
     requests: {cpu: 20m, memory: 64Mi}
     limits: {memory: 192Mi}
@@ -76,7 +83,8 @@ prometheus-node-exporter:
 
 # Default rule groups (NodeFilesystemAlmostOutOfSpace, KubePodCrashLooping,
 # KubeJobFailed, NodeDown, ...) stay enabled — they cover this cluster's real
-# incident classes. Custom media-stack rules get added as PrometheusRule
-# manifests in k8s/monitoring/ later.
+# incident classes. KubePersistentVolumeFillingUp still covers the small
+# local-path PVCs; the big NFS shares opt out per-PVC via the label above.
+# Custom media-stack rules live in k8s/monitoring/media-alerts.yaml.
 defaultRules:
   create: true

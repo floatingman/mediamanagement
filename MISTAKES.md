@@ -88,3 +88,9 @@ Do not record transient tool failures or unverified guesses.
 **Root cause:** One-line resource edit swapped rather than appended; `kubectl apply -k` output for a missing resource is simply absent (not an error), and nothing diffs the kustomization's resources against the directory.
 **Prevention:** After touching any `kustomization.yaml` resources block, verify sets match: `diff <(ls k8s/<dir>/*.yaml | xargs -n1 basename | grep -v kustomization | sort) <(grep -oE "^  - [a-z-]+\.yaml" k8s/<dir>/kustomization.yaml | sed "s/^  - //" | sort)`. Treat a manifest file on disk that never appears in apply output as a red flag.
 **Verification:** radarr.yaml restored to resources (with comment); sets diff empty; `kubectl apply -k k8s/media` shows `deployment.apps/radarr configured`, new pod, `/downloads/nzb/complete/movies` lists all releases, queue items `ok` and history shows imports (Fiend 21:43:55Z).
+
+### [2026-09-20] Piping a mutating kubectl apply through head SIGPIPE-killed it mid-apply
+**Mistake:** Ran `kubectl apply -k k8s/media ... | grep ... | head -10` to trim output; head closed the pipe after 10 lines, kubectl died of SIGPIPE, and the PersistentVolumeClaim updates (the excluded_from_alerts labels) were never sent — while the visible "success-looking" output masked the skip.
+**Root cause:** Truncated the display of a mutating command with `head`, which terminates the upstream producer. Apply emits objects in stream order, so the objects after the first ~10 lines (PVCs sort after services) were silently dropped.
+**Prevention:** Never pipe a mutating kubectl command through `head`/`grep -m`; capture full output to a file or filter read-only (`grep` without early-exit on a file), and verify mutations with a follow-up read (`kubectl get -o ...`).
+**Verification:** `kubectl -n media get pvc -l excluded_from_alerts=true --no-headers | wc -l` → 5 only after re-running apply without the head pipe.

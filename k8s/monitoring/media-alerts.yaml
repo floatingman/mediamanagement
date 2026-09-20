@@ -61,3 +61,51 @@ spec:
           for: 30m
           labels: {severity: info}
           annotations: {summary: "{{ $labels.job }} reports health issues"}
+        # Absolute-bytes floors for the NFS pools — replaces the percent-based
+        # KubePersistentVolumeFillingUp defaults, which these PVCs opt out of
+        # via the excluded_from_alerts label (k8s/media/nfs-pvcs.yaml).
+        # Percent is meaningless here: each share reports its WHOLE NAS
+        # volume's df, so 3% of perceptormedia's ~100TiB volume1 is ~3TiB.
+        # One alert per physical pool:
+        #   nfs-perceptormedia          → Synology volume1
+        #   nfs-perceptormediaexpansion → Synology volume3 — same df as the
+        #                                  nfs-backups and nfs-synology-downloads
+        #                                  exports; do NOT add those (triple dupes)
+        #   nfs-ratchetmedia            → Unraid /mnt/user/Media
+        # max by() collapses the per-node duplicate series; job="kubelet"
+        # excludes the apiserver-proxied copies (exported_namespace).
+        - alert: NfsVolumeFillingUp
+          expr: |
+            max by (namespace, persistentvolumeclaim) (
+              kubelet_volume_stats_available_bytes{
+                job="kubelet", namespace="media",
+                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia"
+              }
+            ) < 1024 * 1024 * 1024 * 1024
+          for: 30m
+          labels: {severity: warning}
+          annotations:
+            summary: "NFS pool {{ $labels.persistentvolumeclaim }} is under 1TiB free"
+            description: >-
+              Absolute free space on the NAS volume behind
+              {{ $labels.persistentvolumeclaim }} has been under 1TiB for 30m
+              (currently {{ $value | humanize1024 }}). Plan cleanup — percent
+              semantics don't apply to pools this size.
+        - alert: NfsVolumeCriticallyFull
+          expr: |
+            max by (namespace, persistentvolumeclaim) (
+              kubelet_volume_stats_available_bytes{
+                job="kubelet", namespace="media",
+                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia"
+              }
+            ) < 256 * 1024 * 1024 * 1024
+          for: 10m
+          labels: {severity: critical}
+          annotations:
+            summary: "NFS pool {{ $labels.persistentvolumeclaim }} is under 256GiB free"
+            description: >-
+              Absolute free space on the NAS volume behind
+              {{ $labels.persistentvolumeclaim }} has been under 256GiB for
+              10m (currently {{ $value | humanize1024 }}). Downloads and
+              *arr imports will start failing soon — free space or grow the
+              NAS volume.
