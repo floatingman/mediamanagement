@@ -27,7 +27,7 @@ spec:
             - {name: syndl, mountPath: /downloads} # Synology volume3/downloads since 2026-09-19
           resources:
             requests: {cpu: 100m, memory: 256Mi}
-            limits: {memory: 2Gi}
+            limits: {memory: 4Gi} # 2Gi GC-thrashed on bulk imports (15k-track rescan post-OOM stalled at 88% CPU / 1.5G RSS; DB is 4.5G)
           readinessProbe:
             tcpSocket: {port: 8686}
             initialDelaySeconds: 20
