@@ -79,7 +79,7 @@ spec:
             max by (namespace, persistentvolumeclaim) (
               kubelet_volume_stats_available_bytes{
                 job="kubelet", namespace="media",
-                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia"
+                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia|nfs-synology-downloads|nfs-backups"
               }
             ) < 1024 * 1024 * 1024 * 1024
           for: 30m
@@ -96,7 +96,7 @@ spec:
             max by (namespace, persistentvolumeclaim) (
               kubelet_volume_stats_available_bytes{
                 job="kubelet", namespace="media",
-                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia"
+                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia|nfs-synology-downloads|nfs-backups"
               }
             ) < 256 * 1024 * 1024 * 1024
           for: 10m
