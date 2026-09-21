@@ -52,6 +52,6 @@ services:
       - traefik.http.routers.torrent.rule=Host(`torrent.thenewmans.casa`)
     volumes:
       - ../appdata/qbittorrent:/config
-      - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Downloads/torrents:/downloads
+      - /mnt/downloads/torrents:/downloads # Synology volume3/downloads share since 2026-09-21 (Ratchet pool degraded; 1.9T tree copied + verified byte-identical, TROUBLESHOOTING.md §4)
       - /mnt/ratchetmedia/Syncs/torrent:/watch # syncs relocated to NFS 2026-09-16 (syncthing in k8s writes here)
     restart: unless-stopped
