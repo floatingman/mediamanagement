@@ -94,3 +94,9 @@ Do not record transient tool failures or unverified guesses.
 **Root cause:** Truncated the display of a mutating command with `head`, which terminates the upstream producer. Apply emits objects in stream order, so the objects after the first ~10 lines (PVCs sort after services) were silently dropped.
 **Prevention:** Never pipe a mutating kubectl command through `head`/`grep -m`; capture full output to a file or filter read-only (`grep` without early-exit on a file), and verify mutations with a follow-up read (`kubectl get -o ...`).
 **Verification:** `kubectl -n media get pvc -l excluded_from_alerts=true --no-headers | wc -l` → 5 only after re-running apply without the head pipe.
+
+### [2026-09-20] edit-tool hunk anchored on remembered line numbers patched the wrong block
+**Mistake:** After rewriting kube-prometheus-stack-values.yaml with `write`, issued `PUT 36.=37:` using line numbers from memory; lines 36-37 were actually alertmanagerSpec's resources keys, so a grafana help comment got spliced into alertmanagerSpec (orphaning a `limits:` key) while the intended broken comment stayed unfixed.
+**Root cause:** Line anchors from a stale mental model — a full-file write renumbers everything.
+**Prevention:** After any full-file `write`, re-read the file before the first line-anchored edit; never target ranges not seen in a post-write read.
+**Verification:** Fresh read exposed both damage sites; repaired both; `helm template` parsed and rendered clean with expected object counts.

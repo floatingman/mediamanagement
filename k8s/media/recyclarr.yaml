@@ -1,6 +1,13 @@
 # Recyclarr — quality-profile sync, as a CronJob (compose ran it on demand).
-# Suspended until its data is migrated; then:
-#   kubectl -n media patch cronjob recyclarr -p '{"spec":{"suspend":false}}'
+# Data migration DONE. Unsuspended 2026-09-20.
+#
+# Works only with the repo pin in /config/settings.yml (on the
+# recyclarr-config PVC): config-templates master dropped includes.json
+# (2026-08-07, v8 repo model) which recyclarr 7.4.0 needs for
+# `include: - template:` resolution. settings.yml pins the checkout to the
+# last populated commit (b323bcae). Do NOT bump the image past 7.x without
+# migrating configs — v8 removes official include templates entirely
+# (docs: next.recyclarr.dev).
 # Manual run any time:
 #   kubectl -n media create job --from=cronjob/recyclarr recyclarr-manual
 apiVersion: batch/v1
@@ -10,7 +17,7 @@ metadata:
   labels: {app: recyclarr}
 spec:
   schedule: "0 3 * * *"
-  suspend: true
+  suspend: false
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -45,4 +52,5 @@ metadata: {name: recyclarr-config}
 spec:
   accessModes: [ReadWriteOnce]
   storageClassName: local-path
-  resources: {requests: {storage: 2Gi}}
+  resources:
+    requests: {storage: 2Gi}

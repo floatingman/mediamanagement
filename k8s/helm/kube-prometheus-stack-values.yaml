@@ -44,7 +44,7 @@ alertmanager:
 
 grafana:
   # Password: the chart auto-generates and mounts a secret (no value in git).
-  # Retrieve: kubectl -n monitoring get secret -l app.kubernetes.io/component=admin-secret \
+  # Retrieve: kubectl -n monitoring get secret -l app.kubernetes.io/component=admin-secret
   #   -o jsonpath='{.items[0].data.admin-password}' | base64 -d
   # (2026-09-20: these keys sat mis-nested under alertmanager: since install —
   # inert, grafana ran on defaults/emptyDir. Moved here for real persistence.)
@@ -66,6 +66,19 @@ prometheusOperator:
   resources:
     requests: {cpu: 50m, memory: 128Mi}
     limits: {memory: 512Mi}
+
+# k3s embeds controller-manager, scheduler, and kube-proxy in the server
+# binary — no separate scrapeable static pods. Their ServiceMonitors never
+# get targets, so KubeControllerManagerDown / KubeSchedulerDown /
+# KubeProxyDown fired permanently since install. Components + rule groups
+# off (2026-09-20). kubelet/apiserver/coredns/etcd monitors stay — those
+# ARE scrapeable on k3s.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
 
 kube-state-metrics:
   # Expose PVC labels (kube_persistentvolumeclaim_labels) so the default
@@ -89,5 +102,10 @@ prometheus-node-exporter:
 # incident classes. KubePersistentVolumeFillingUp still covers the small
 # local-path PVCs; the big NFS shares opt out per-PVC via the label above.
 # Custom media-stack rules live in k8s/monitoring/media-alerts.yaml.
+# The three control-plane groups are dead on k3s (see component note above).
 defaultRules:
   create: true
+  rules:
+    kubeControllerManager: false
+    kubeScheduler: false
+    kubeProxy: false
