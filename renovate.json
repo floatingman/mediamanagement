@@ -8,7 +8,9 @@
   "commitMessageSuffix": " (k8s)",
   "kubernetes": {
     "enabled": true,
-    "fileMatch": ["^k8s/.*\\.yaml$"]
+    "managerFilePatterns": [
+      "/^k8s/.*\\.yaml$/"
+    ]
   },
   "packageRules": [
     {
@@ -36,17 +38,18 @@
       "enabled": false
     }
   ],
-  "regexManagers": [
+  "customManagers": [
     {
+      "customType": "regex",
       "description": "helm chart versions referenced in INSTALL.md commands",
-      "fileMatch": ["^k8s/INSTALL\\.md$", "^TROUBLESHOOTING\\.md$"],
-      "matchStrings": [
-        "helm install \\S+ (?<depName>[^ /]+)/(?<packageName>[^ ]+) .*--version (?<currentValue>[^ ]+)"
-      ],
+      "managerFilePatterns": ["/^k8s/INSTALL\\.md$/", "/^TROUBLESHOOTING\\.md$/"],
+      "matchStrings": ["helm install \\S+ (?<depName>[^ /]+)/(?<packageName>[^ ]+) .*--version (?<currentValue>[^ ]+)"],
       "datasourceTemplate": "helm"
     }
   ],
   "helmv3": {
-    "fileMatch": ["^k8s/helm/.*-values\\.yaml$"]
+    "managerFilePatterns": [
+      "/^k8s/helm/.*-values\\.yaml$/"
+    ]
   }
 }
