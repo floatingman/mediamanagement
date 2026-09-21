@@ -42,9 +42,12 @@ alertmanager:
           storageClassName: local-path
           resources: {requests: {storage: 2Gi}}
 
+grafana:
   # Password: the chart auto-generates and mounts a secret (no value in git).
   # Retrieve: kubectl -n monitoring get secret -l app.kubernetes.io/component=admin-secret \
   #   -o jsonpath='{.items[0].data.admin-password}' | base64 -d
+  # (2026-09-20: these keys sat mis-nested under alertmanager: since install —
+  # inert, grafana ran on defaults/emptyDir. Moved here for real persistence.)
   adminUser: admin
   persistence:
     enabled: true
