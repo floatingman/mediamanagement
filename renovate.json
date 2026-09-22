@@ -21,6 +21,19 @@
       "automerge": false
     },
     {
+      "description": "postgres majors need dump/restore, not a tag bump — stop offering 18+",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "recyclarr stays on 7.x — v8 removes include templates (see k8s/media/recyclarr.yaml header)",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/recyclarr/recyclarr"],
+      "allowedVersions": "/^7\\./"
+    },
+    {
       "description": "*arr apps run DB migrations on major jumps — always manual review",
       "matchFileNames": ["k8s/media/*.yaml"],
       "matchUpdateTypes": ["major", "minor"],
