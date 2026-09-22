@@ -1,12 +1,14 @@
 # Recyclarr — quality-profile sync, as a CronJob (compose ran it on demand).
 #
-# v8 since 2026-09-22: the config uses a single guide-backed quality profile
-# (trash_id in configs/hd-bluray-web.yml); no include templates, no repo pin
-# (settings.yml is empty — v8 auto-uses official providers). Adoption of the
-# pre-existing "HD Bluray + WEB" profile verified in Radarr (single profile,
-# id 15). v7 rollback bundle: media-k8s-3:/var/tmp/recyclarr-config-backup-
-# 20260922.tgz — restore configs/ + settings.yml + state/ (v8 rewrote state
-# format) and revert this image to 7.4.0.
+# v8 since 2026-09-22: guide-backed profiles (trash_id in configs/
+# hd-bluray-web.yml); no include templates, no repo pin (settings.yml is
+# empty — v8 auto-uses official providers). Manages 7 profiles across both
+# services: radarr HD Bluray + WEB + the four SQPs, sonarr (instance
+# "mainson") WEB-1080p/WEB-2160p. All adopted pre-existing profiles in-place
+# (verified: radarr 18 / sonarr 11 profiles, no duplicates). v7 rollback
+# bundle: media-k8s-3:/var/tmp/recyclarr-config-backup-20260922.tgz —
+# restore configs/ + settings.yml + state/ (v8 rewrote state format) and
+# revert this image to 7.4.0.
 # Manual run any time:
 #   kubectl -n media create job --from=cronjob/recyclarr recyclarr-manual-$(date +%s)
 apiVersion: batch/v1

@@ -1,9 +1,9 @@
 # Recyclarr v8 config — migrated 2026-09-22 from the v7 template-include
-# model. The three `include: - template:` directives (quality definition,
-# quality profile, custom formats) collapsed into a single guide-backed
-# quality profile: v8 pulls profile settings and CF scores directly from
-# TRaSH Guides by trash_id. Optional CF tweaks: add trash_ids blocks with
-# assign_scores_to (https://recyclarr.dev/reference/configuration/custom-formats/).
+# model; same day: SQP profiles added guide-backed, sonarr instance revived
+# (mainson, matching the legacy compose-era state dir). Guide-backed profiles
+# pull settings + CF scores from TRaSH Guides by trash_id; `name:` anchors
+# adoption of the profiles already living in each service (drop a name to
+# let the guide rename apply on next sync).
 radarr:
   hd-bluray-web:
     base_url: !secret radarr_hd_url
@@ -15,9 +15,43 @@ radarr:
       type: movie
 
     quality_profiles:
-      # Guide-backed HD Bluray + WEB. `name` anchors adoption of the profile
-      # v7 already created in Radarr (drop it to let the guide rename apply).
       - trash_id: d1d67249d3890e49bc12e275d989a7e9 # HD Bluray + WEB
         name: HD Bluray + WEB
+        reset_unmatched_scores:
+          enabled: true
+      - trash_id: 0896c29d74de619df168d23b98104b22 # [SQP] SQP-1 (1080p)
+        name: SQP-1 (1080p)
+        reset_unmatched_scores:
+          enabled: true
+      - trash_id: 5128baeb2b081b72126bc8482b2a86a0 # [SQP] SQP-1 (2160p)
+        name: SQP-1 (2160p)
+        reset_unmatched_scores:
+          enabled: true
+      - trash_id: 90a3370d2d30cbaf08d9c23b856a12c8 # [SQP] SQP-1 WEB (1080p)
+        name: SQP-1 WEB (1080p)
+        reset_unmatched_scores:
+          enabled: true
+      - trash_id: 2cf36c1f0106ffac993be003ade51865 # [SQP] SQP-3
+        name: SQP-3
+        reset_unmatched_scores:
+          enabled: true
+
+sonarr:
+  mainson:
+    base_url: !secret sonarr_hd_url
+    api_key: !secret sonarr_hd_apikey
+
+    delete_old_custom_formats: true
+
+    quality_definition:
+      type: series
+
+    quality_profiles:
+      - trash_id: 72dae194fc92bf828f32cde7744e51a1 # WEB-1080p
+        name: WEB-1080p
+        reset_unmatched_scores:
+          enabled: true
+      - trash_id: d1498e7d189fbe6c7110ceaabb7473e6 # WEB-2160p
+        name: WEB-2160p
         reset_unmatched_scores:
           enabled: true
