@@ -10,7 +10,7 @@ see `MISTAKES.md`.
 ```bash
 # Cluster (namespaces: media, auth, apps, linkwarden, traefik, headlamp)
 kubectl get pods -A | grep -v Running
-# Docker VM (still hosts: plex, tunarr, ollama, perplexica, searxng, mcsmanager)
+# Docker VM (still hosts: plex, ollama, perplexica, searxng, nostalgiatv, mcsmanager)
 docker compose ps
 ```
 
@@ -156,6 +156,7 @@ container (both should show ProtonVPN); `ip link show tun0` for MTU.
 | Restarted containers force re-login everywhere (pre-2026-09-14) | Authelia had no session backend | Fixed: authelia-valkey with AOF |
 | gluetun wedges on healthcheck restarts in kernelspace wg | Known on this setup | `WIREGUARD_IMPLEMENTATION=userspace` (kept in k8s too) |
 | Plex remote access broken behind bridge networking | Docker NAT traps UPnP | Plex stays on host networking, port-forward 32400/tcp → 192.168.0.9 — permanently on the VM |
+| ollama "slow" / `ollama ps` shows `100% CPU` (2026-09-14→22) | GPU never initialized that boot: dmesg `RmInitAdapter failed (0x30:0xffff:1129)` + `Failed to copy vbios to system memory`; `nvidia-smi` → "No devices found" even on host | `sudo shutdown -r now` — card re-enumerated, model back to 100% GPU. If it recurs after reboot, suspect the card (reseat power/PCIe) |
 | Manual fstab/sed surgery | See MISTAKES.md — dry-run against a copy first | Never hand-roll nested character classes |
 
 **Rolling a service back to docker** (migration rollback): stop the k8s
