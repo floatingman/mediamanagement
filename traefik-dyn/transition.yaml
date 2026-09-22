@@ -14,7 +14,7 @@ http:
       insecureSkipVerify: true
   middlewares:
     authelia:
-      # Used by tunarr + perplexica labels (authelia@file) since wave 1.
+      # Used by perplexica + nostalgiatv labels (authelia@file) since wave 1.
       # Plain-HTTP LAN hop to the k8s authelia NodePort — retires at §9.
       forwardAuth:
         address: http://192.168.0.19:30991/api/authz/forward-auth

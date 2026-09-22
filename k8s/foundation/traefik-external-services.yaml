@@ -7,7 +7,7 @@
 #
 # Permanent VM residents routed here:
 #   torrent (rolled back from k8s — gluetun race, see TROUBLESHOOTING.md)
-#   tunarr, search (searxng), perplexica, minecraft (mcsmanager)
+#   search (searxng), perplexica, minecraft (mcsmanager)
 # Plex is host-networking on the VM (app.plex.tv / :32400) — not routed here.
 #
 # Everything else lives in-cluster behind IngressRoutes.
@@ -32,12 +32,11 @@ data:
         torrent:       {rule: Host(`torrent.thenewmans.casa`),       entryPoints: [websecure], service: vm-torrent,       tls: {certResolver: letsencrypt}}
         search:        {rule: Host(`search.thenewmans.casa`),        entryPoints: [websecure], service: vm-search,        tls: {certResolver: letsencrypt}}
         minecraft:     {rule: Host(`minecraft.thenewmans.casa`),     entryPoints: [websecure], service: vm-minecraft,     tls: {certResolver: letsencrypt}}
-        # tunarr + perplexica moved to IngressRoutes (vm-resident-routes.yaml):
+        # perplexica + nostalgiatv live in IngressRoutes (vm-resident-routes.yaml):
         # file-provider routes can't reference the authelia CRD middleware
       services:
         vm-rancher:        {loadBalancer: {serversTransport: vm-https-transport, servers: [{url: "https://192.168.0.22:443"}]}}
         vm-torrent:        {loadBalancer: {servers: [{url: "http://192.168.0.9:8181"}]}}
-        vm-tunarr:         {loadBalancer: {servers: [{url: "http://192.168.0.9:8000"}]}}
         vm-search:         {loadBalancer: {servers: [{url: "http://192.168.0.9:8082"}]}}
         vm-perplexica:     {loadBalancer: {servers: [{url: "http://192.168.0.9:3002"}]}}
         vm-minecraft:      {loadBalancer: {servers: [{url: "http://192.168.0.9:23333"}]}}

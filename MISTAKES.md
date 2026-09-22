@@ -100,6 +100,7 @@ Do not record transient tool failures or unverified guesses.
 **Root cause:** Line anchors from a stale mental model — a full-file write renumbers everything.
 **Prevention:** After any full-file `write`, re-read the file before the first line-anchored edit; never target ranges not seen in a post-write read.
 **Verification:** Fresh read exposed both damage sites; repaired both; `helm template` parsed and rendered clean with expected object counts.
+**Repeat 2026-09-22:** cut CLAUDE.md line 90 (the just-added nostalgiatv row) instead of the tunarr row at 89 — anchor came from a grep run BEFORE an earlier edit renumbered the file. Rule extends to grep/sed-derived line numbers, not just post-write reads: re-read (or re-grep) immediately before any line-anchored edit. Caught by reading the edit response listing; fixed by replacing the row in the next edit.
 
 ### [2026-09-21] Triaged recyclarr 7.5.2 as a "safe patch" from a stale version boundary
 **Mistake:** Recommended clicking/merging the renovate recyclarr 7.4.0→7.5.2 PR because the manifest header said "do not bump past 7.x", reading that as a guarantee for all 7.x. 7.5.2 fatals at startup ("unable to find config include 'radarr-quality-definition-movie'") even with the settings.yml sha1 pin intact — the include-resolution change landed inside the 7.x line.

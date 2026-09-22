@@ -30,7 +30,7 @@ services:
       - traefik.enable=true
       - traefik.http.services.perplexica.loadbalancer.server.port=3000
       - traefik.http.routers.perplexica.rule=Host(`perplexica.thenewmans.casa`)
-      # No built-in auth — gated by Authelia forward-auth, like tunarr/nextDash
+      # No built-in auth — gated by Authelia forward-auth, like nextDash
       - traefik.http.routers.perplexica.middlewares=authelia@file # was authelia@docker until the wave-1 authelia migration
     ports:
       - "3002:3000" # published for the k8s edge (permanent — GPU-bound via ollama)

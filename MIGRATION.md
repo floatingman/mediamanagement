@@ -192,7 +192,6 @@ sudo rsync -aHSx --numeric-ids --delete \
 | lidarr | 56 GB | music metadata + art |
 | radarr | 13 GB | |
 | linkwarden | 12 GB | Postgres + Meilisearch + bookmark data — see §5 |
-| tunarr | 11 GB | |
 | ollama | 7.4 GB | model weights (re-pullable: `docker exec ollama ollama pull <model>`) |
 | readarr | 2.7 GB | |
 | sonarr | 2.6 GB | |
@@ -303,7 +302,7 @@ docker compose up -d proxy domain          # Traefik + DDNS (certs re-issue)
 docker compose up -d authelia              # SSO gate
 docker compose up -d vpn sabnzbd torrent   # downloaders (vpn before torrent)
 docker compose up -d radarr sonarr lidarr readarr bazarr profilarr recyclarr
-docker compose up -d seerr tautulli agregarr tunarr cleanuparr maintainerr audiobookshelf
+docker compose up -d seerr tautulli agregarr cleanuparr maintainerr audiobookshelf
 docker compose up -d ollama                # GPU model server
 docker compose up -d linkwarden-db linkwarden-search linkwarden
 docker compose up -d mcsmanager-web mcsmanager-daemon
@@ -364,7 +363,7 @@ docker exec nordvpn wget -qO- https://api.ipify.org   # should show NordVPN exit
 | **seerr** | `appdata/seerr/` | 60 MB | SQLite — stop before copy | Requests list |
 | **tautulli** | `appdata/tautulli/` | 267 MB | SQLite + Plex token | Connects to Plex |
 | **agregarr** | `appdata/agregarr/` | 491 MB | | Collections display |
-| **tunarr** | `appdata/tunarr/` | 11 GB | **GPU** (`runtime: nvidia`) | Channels play |
+| **nostalgiatv** | `appdata/nostalgiatv/` | <1 GB | UI-driven setup (Plex URL + token) | WebUI loads, channels fill |
 | **cleanuparr** | `appdata/cleanuparr/` | 4.4 MB | | WebUI loads |
 | **maintainerr** | `appdata/maintainerr/` | 928 KB | `MAINTAINERR_GITHUB_TOKEN` | Rules present |
 | **audiobookshelf** | `appdata/audiobookshelf/` | 166 MB | media on NAS shares | Library loads |

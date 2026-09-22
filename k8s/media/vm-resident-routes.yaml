@@ -3,32 +3,6 @@
 # middleware (dash works via CRD; file+CRD-middleware 404s at the §9
 # cutover) — so these get selector-less Service stubs + IngressRoutes,
 # mirroring the torrent rollback pattern.
-apiVersion: v1
-kind: Service
-metadata: {name: tunarr-vm, namespace: media}
-spec:
-  ports: [{port: 8000, targetPort: 8000}]
----
-apiVersion: v1
-kind: Endpoints
-metadata: {name: tunarr-vm, namespace: media}
-subsets:
-  - addresses: [{ip: 192.168.0.9}]
-    ports: [{port: 8000}]
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata: {name: tunarr-vm, namespace: media}
-spec:
-  entryPoints: [websecure]
-  routes:
-    - match: Host(`tunarr.thenewmans.casa`)
-      kind: Rule
-      middlewares:
-        - name: authelia
-          namespace: auth
-      services: [{name: tunarr-vm, port: 8000}]
-  tls: {certResolver: letsencrypt}
 ---
 apiVersion: v1
 kind: Service
@@ -55,4 +29,31 @@ spec:
         - name: authelia
           namespace: auth
       services: [{name: perplexica-vm, port: 3000}]
+  tls: {certResolver: letsencrypt}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: nostalgiatv-vm, namespace: media}
+spec:
+  ports: [{port: 19850, targetPort: 19850}]
+---
+apiVersion: v1
+kind: Endpoints
+metadata: {name: nostalgiatv-vm, namespace: media}
+subsets:
+  - addresses: [{ip: 192.168.0.9}]
+    ports: [{port: 19850}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: nostalgiatv-vm, namespace: media}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`nostalgiatv.thenewmans.casa`)
+      kind: Rule
+      middlewares:
+        - name: authelia
+          namespace: auth
+      services: [{name: nostalgiatv-vm, port: 19850}]
   tls: {certResolver: letsencrypt}

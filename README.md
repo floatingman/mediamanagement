@@ -23,7 +23,7 @@ Docker Compose-based home media automation stack for the Newman household.
 | Recyclarr | — | Quality profile sync (run manually) |
 | Profilarr | `profilarr.thenewmans.casa` | Profile management |
 | Agregarr | `agregarr.thenewmans.casa` | Collection display |
-| Tunarr | `tunarr.thenewmans.casa` | TV channel simulator |
+| NostalgiaTV | `nostalgiatv.thenewmans.casa` | Retro-TV channels from Plex (login via Authelia) |
 | Cleanuparr | `cleanuparr.thenewmans.casa` | Download queue cleanup |
 | Maintainerr | `maintainerr.thenewmans.casa` | Library maintenance |
 | Audiobookshelf | `audiobookshelf.thenewmans.casa` | Audiobook/podcast server |
