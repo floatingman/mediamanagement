@@ -26,6 +26,12 @@ spec:
           envFrom:
             - secretRef:
                 name: linkwarden # uses MEILI_MASTER_KEY; extra keys ignored
+          env:
+            # v1.54 refuses a 1.12.8 database without this; in-place LMDB
+            # upgrade on startup, no-op once versions match. Snapshot at
+            # media-k8s-2:/var/tmp/meili-backup-20260921.tgz before the jump.
+            - name: MEILI_UPGRADE_DB
+              value: "true"
           volumeMounts:
             - name: meili
               mountPath: /meili_data

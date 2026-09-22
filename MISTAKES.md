@@ -100,3 +100,9 @@ Do not record transient tool failures or unverified guesses.
 **Root cause:** Line anchors from a stale mental model — a full-file write renumbers everything.
 **Prevention:** After any full-file `write`, re-read the file before the first line-anchored edit; never target ranges not seen in a post-write read.
 **Verification:** Fresh read exposed both damage sites; repaired both; `helm template` parsed and rendered clean with expected object counts.
+
+### [2026-09-21] Triaged recyclarr 7.5.2 as a "safe patch" from a stale version boundary
+**Mistake:** Recommended clicking/merging the renovate recyclarr 7.4.0→7.5.2 PR because the manifest header said "do not bump past 7.x", reading that as a guarantee for all 7.x. 7.5.2 fatals at startup ("unable to find config include 'radarr-quality-definition-movie'") even with the settings.yml sha1 pin intact — the include-resolution change landed inside the 7.x line.
+**Root cause:** Treated a header comment documenting boundaries as of its writing as forward-looking; merged a config-coupled app's image bump without exercising the job once (the recyclarr header itself says the config model is version-coupled).
+**Prevention:** For config-coupled apps (recyclarr especially): after merging ANY image bump, immediately run `kubectl -n media create job --from=cronjob/recyclarr recyclarr-manual-$(date +%s)` and confirm a clean sync the same day; header "safe" statements only cover versions that existed when written.
+**Verification:** Reverted to 7.4.0 (manifest + live), manual job Complete in 6s with clean Radarr sync; renovate.json pins recyclarr allowedVersions to /^7\.4\./ until the v8 config migration.

@@ -33,7 +33,7 @@ spec:
             runAsGroup: 1003
           containers:
             - name: recyclarr
-              image: ghcr.io/recyclarr/recyclarr:7.5.2
+              image: ghcr.io/recyclarr/recyclarr:7.4.0 # 7.5.2 fatal: "unable to find config include" w/ pinned repo — see header
               args: [sync]
               env:
                 - {name: TZ, value: America/Chicago}

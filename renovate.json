@@ -37,10 +37,10 @@
       "enabled": false
     },
     {
-      "description": "recyclarr stays on 7.x — v8 removes include templates (see k8s/media/recyclarr.yaml header)",
+      "description": "recyclarr pinned to 7.4.x — 7.5.2 fatals on 'unable to find config include' even with the settings.yml sha1 pin (verified 2026-09-21); v8 removes include templates entirely",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/recyclarr/recyclarr"],
-      "allowedVersions": "/^7\\./"
+      "allowedVersions": "/^7\\.4\\./"
     },
     {
       "description": "*arr apps run DB migrations on major jumps — always manual review",
