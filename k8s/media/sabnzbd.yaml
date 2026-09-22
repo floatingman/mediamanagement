@@ -30,6 +30,7 @@ spec:
             - {name: PUID, value: "1000"}
             - {name: PGID, value: "1003"}
             - {name: TZ, value: America/Chicago}
+            - {name: UMASK, value: "002"} # group-writable (share model: group users rw, TROUBLESHOOTING.md §3)
           volumeMounts:
             - {name: config, mountPath: /config}
             - {name: incomplete, mountPath: /incomplete}

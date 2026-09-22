@@ -21,7 +21,7 @@ spec:
             - {name: PUID, value: "1000"}
             - {name: PGID, value: "1003"}
             - {name: TZ, value: America/Chicago}
-            - {name: UMASK, value: "022"}
+            - {name: UMASK, value: "002"} # group-writable (share model: group users rw)
           volumeMounts:
             - {name: config, mountPath: /config}
             - {name: pm, mountPath: /media, subPath: Video/Movies}
