@@ -22,19 +22,22 @@ spec:
     spec:
       containers:
         - name: exportarr
-          image: ghcr.io/onedr0p/exportarr:latest
+          image: ghcr.io/onedr0p/exportarr:v2.3.0 # pinned — :latest is invisible to Renovate
           args: [radarr]
           env:
             - {name: PORT, value: "9707"}
             - {name: URL, value: http://radarr.media.svc.cluster.local:7878}
             - {name: APIKEY, valueFrom: {secretKeyRef: {name: exportarr-keys, key: radarr}}}
-            # ENABLE_ADDITIONAL_METRICS off on ALL apps: the per-item library
-            # walks OOM (radarr/lidarr) or exceed the scrape timeout (sonarr);
-            # alert rules only use core endpoints (status/health)
+            # ENABLE_ADDITIONAL_METRICS unset: per-item walks OOM / exceed
+            # timeouts; alert rules only use core endpoints (status/health).
+            # v2.3.0's BASIC set still ramps to a ~220Mi plateau (library
+            # stats walk) — at 256Mi that was OOM whack-a-mole (135 restarts,
+            # 2026-09-22). GOMEMLIMIT keeps GC inside the raised limit.
+            - {name: GOMEMLIMIT, value: 400MiB}
           ports: [{containerPort: 9707, name: metrics}]
           resources:
             requests: {cpu: 5m, memory: 64Mi}
-            limits: {memory: 256Mi} # core set includes the /movie walk — OOMs at 128Mi
+            limits: {memory: 512Mi}
 ---
 apiVersion: v1
 kind: Service
@@ -61,14 +64,16 @@ spec:
     spec:
       containers:
         - name: exportarr
-          image: ghcr.io/onedr0p/exportarr:latest
+          image: ghcr.io/onedr0p/exportarr:v2.3.0
           args: [sonarr]
           env:
             - {name: PORT, value: "9708"}
             - {name: URL, value: http://sonarr.media.svc.cluster.local:8989}
             - {name: APIKEY, valueFrom: {secretKeyRef: {name: exportarr-keys, key: sonarr}}}
-            # ENABLE_ADDITIONAL_METRICS off: per-series API walks on this library
-            # exceed the 30s scrape timeout; alert rules only need core metrics
+            # ENABLE_ADDITIONAL_METRICS unset: per-series walks exceed the
+            # scrape timeout on this library; core metrics only. Stable at
+            # 128Mi (the walks time out before they can balloon).
+            - {name: GOMEMLIMIT, value: 100MiB}
           ports: [{containerPort: 9708, name: metrics}]
           resources:
             requests: {cpu: 5m, memory: 32Mi}
@@ -99,17 +104,19 @@ spec:
     spec:
       containers:
         - name: exportarr
-          image: ghcr.io/onedr0p/exportarr:latest
+          image: ghcr.io/onedr0p/exportarr:v2.3.0
           args: [lidarr]
           env:
             - {name: PORT, value: "9709"}
             - {name: URL, value: http://lidarr.media.svc.cluster.local:8686}
             - {name: APIKEY, valueFrom: {secretKeyRef: {name: exportarr-keys, key: lidarr}}}
-            # ENABLE_ADDITIONAL_METRICS off (see sonarr); library is the largest
+            # same v2.3.0 basic-set plateau as radarr (~220Mi on the music
+            # library) — was OOM-cycling at 256Mi (121 restarts, 2026-09-22)
+            - {name: GOMEMLIMIT, value: 400MiB}
           ports: [{containerPort: 9709, name: metrics}]
           resources:
             requests: {cpu: 5m, memory: 64Mi}
-            limits: {memory: 256Mi}
+            limits: {memory: 512Mi}
 ---
 apiVersion: v1
 kind: Service
@@ -136,12 +143,13 @@ spec:
     spec:
       containers:
         - name: exportarr
-          image: ghcr.io/onedr0p/exportarr:latest
+          image: ghcr.io/onedr0p/exportarr:v2.3.0
           args: [sabnzbd]
           env:
             - {name: PORT, value: "9710"}
             - {name: URL, value: http://sabnzbd.media.svc.cluster.local:8080}
             - {name: APIKEY, valueFrom: {secretKeyRef: {name: exportarr-keys, key: sabnzbd}}}
+            - {name: GOMEMLIMIT, value: 100MiB}
           ports: [{containerPort: 9710, name: metrics}]
           resources:
             requests: {cpu: 5m, memory: 32Mi}
