@@ -87,7 +87,7 @@ spec:
           # invalid tarball): poll gluetun's forwarded port, push it to
           # qBittorrent's listen port via the localhost-bypass WebUI API.
           # Reads the API key from gluetun's own auth config.
-          image: curlimages/curl:8.11.1
+          image: curlimages/curl:8.22.0
           command: [sh, /scripts/port-sync.sh]
           volumeMounts:
             - {name: port-sync, mountPath: /scripts, readOnly: true}
