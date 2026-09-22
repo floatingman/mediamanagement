@@ -5,11 +5,15 @@
   "schedule": ["before 6am on Monday"],
   "prConcurrentLimit": 5,
   "labels": ["dependencies"],
-  "commitMessageSuffix": " (k8s)",
   "kubernetes": {
     "enabled": true,
     "managerFilePatterns": [
       "/^k8s/.*\\.yaml$/"
+    ]
+  },
+  "docker-compose": {
+    "managerFilePatterns": [
+      "/^compose/.*\\.yaml$/"
     ]
   },
   "packageRules": [
@@ -19,6 +23,11 @@
       "matchUpdateTypes": ["major"],
       "addLabels": ["major-update"],
       "automerge": false
+    },
+    {
+      "description": "k8s manifest PRs keep the (k8s) suffix; compose PRs don't",
+      "matchFileNames": ["k8s/**"],
+      "commitMessageSuffix": " (k8s)"
     },
     {
       "description": "postgres majors need dump/restore, not a tag bump — stop offering 18+",
