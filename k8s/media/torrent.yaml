@@ -26,7 +26,7 @@ spec:
         # the pod netns make "adding ip rule 101 ... file exists" fail forever,
         # killing DNS + tunnel setup. Clear them BEFORE gluetun starts.
         - name: clear-ip-rules
-          image: busybox:1.36
+          image: busybox:1.38
           command: [sh, -c, "(ip rule del table 51820; ip -6 rule del table 51820) || true"]
           securityContext:
             capabilities:
