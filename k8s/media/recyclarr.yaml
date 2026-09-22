@@ -1,15 +1,14 @@
 # Recyclarr — quality-profile sync, as a CronJob (compose ran it on demand).
-# Data migration DONE. Unsuspended 2026-09-20.
 #
-# Works only with the repo pin in /config/settings.yml (on the
-# recyclarr-config PVC): config-templates master dropped includes.json
-# (2026-08-07, v8 repo model) which recyclarr 7.4.0 needs for
-# `include: - template:` resolution. settings.yml pins the checkout to the
-# last populated commit (b323bcae). Do NOT bump the image past 7.x without
-# migrating configs — v8 removes official include templates entirely
-# (docs: next.recyclarr.dev).
+# v8 since 2026-09-22: the config uses a single guide-backed quality profile
+# (trash_id in configs/hd-bluray-web.yml); no include templates, no repo pin
+# (settings.yml is empty — v8 auto-uses official providers). Adoption of the
+# pre-existing "HD Bluray + WEB" profile verified in Radarr (single profile,
+# id 15). v7 rollback bundle: media-k8s-3:/var/tmp/recyclarr-config-backup-
+# 20260922.tgz — restore configs/ + settings.yml + state/ (v8 rewrote state
+# format) and revert this image to 7.4.0.
 # Manual run any time:
-#   kubectl -n media create job --from=cronjob/recyclarr recyclarr-manual
+#   kubectl -n media create job --from=cronjob/recyclarr recyclarr-manual-$(date +%s)
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -33,7 +32,7 @@ spec:
             runAsGroup: 1003
           containers:
             - name: recyclarr
-              image: ghcr.io/recyclarr/recyclarr:7.4.0 # 7.5.2 fatal: "unable to find config include" w/ pinned repo — see header
+              image: ghcr.io/recyclarr/recyclarr:8.7.2
               args: [sync]
               env:
                 - {name: TZ, value: America/Chicago}

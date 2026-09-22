@@ -1,5 +1,7 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/recyclarr/recyclarr/master/schemas/settings-schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/recyclarr/recyclarr/v8.7.2/schemas/settings-schema.json
 
-# Edit this file to customize the behavior of Recyclarr beyond its defaults
-# For the settings file reference guide, visit the link to the wiki below:
-# https://github.com/recyclarr/recyclarr/wiki/Settings-Reference
+# v8: official TRaSH Guides + config-templates are used automatically
+# (version-aware branch selection). The old `repositories:` pin — needed
+# because v7 resolves include templates via includes.json, removed upstream
+# 2026-08-07 — is obsolete: v8 has no official include templates at all.
+# v7 rollback bundle: media-k8s-3:/var/tmp/recyclarr-config-backup-20260922.tgz
