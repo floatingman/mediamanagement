@@ -24,6 +24,7 @@ Docker Compose-based home media automation stack for the Newman household.
 | Profilarr | `profilarr.thenewmans.casa` | Profile management |
 | Agregarr | `agregarr.thenewmans.casa` | Collection display |
 | NostalgiaTV | `nostalgiatv.thenewmans.casa` | Retro-TV channels from Plex (login via Authelia) |
+| Jellyfin | `jellyfin.thenewmans.casa` | Media server (Live TV for NostalgiaTV on Roku; own login, not Authelia) |
 | Cleanuparr | `cleanuparr.thenewmans.casa` | Download queue cleanup |
 | Maintainerr | `maintainerr.thenewmans.casa` | Library maintenance |
 | Audiobookshelf | `audiobookshelf.thenewmans.casa` | Audiobook/podcast server |

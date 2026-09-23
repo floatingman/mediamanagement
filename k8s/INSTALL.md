@@ -299,7 +299,7 @@ Public IP is unchanged, so cloudflare-ddns needs nothing.
 for h in auth radarr sonarr lidarr bazarr sabnzbd torrent seerr tautulli \
          agregarr cleanuparr maintainerr profilarr titlecardmaker \
          audiobookshelf calibre romm minecraft convertx zipline sync \
-         search perplexica linkwarden rancher nostalgiatv; do
+         search perplexica linkwarden rancher nostalgiatv jellyfin; do
   echo -n "$h: "; curl -sIo /dev/null -w '%{http_code}\n' https://$h.thenewmans.casa
 done
 ```

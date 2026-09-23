@@ -228,3 +228,4 @@ appdata/romm/hoist_manifest_*.tsv
 
 # Kubernetes: generated real-secret env files (see k8s/scripts/gen-env.sh)
 k8s/**/env.txt
+appdata/jellyfin/

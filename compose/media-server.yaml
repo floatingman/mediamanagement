@@ -70,3 +70,30 @@ services:
       - ../appdata/nostalgiatv/config:/app/config
       - ../appdata/nostalgiatv/logos:/app/logos
     restart: unless-stopped
+
+  jellyfin:
+    # Media server for the Roku (Jellyfin app) — stood up 2026-09-23 purely as
+    # the Live TV front for NostalgiaTV: consumes its channels.m3u + xmltv.xml
+    # (M3U tuner + XMLTV guide), which gives Roku the FULL 30-day EPG that
+    # Plex's Gracenote-mapped DVR path can't match. No media libraries mounted
+    # (Plex stays the library server). NOT authelia-gated on purpose: Jellyfin
+    # has its own user accounts, and TV/app clients (Roku) can't complete an
+    # SSO redirect.
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    user: "1000:1003" # official image ignores PUID env; pass the uid:gid directly
+    runtime: nvidia
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,video,utility # `video` for NVENC, like plex
+    ports:
+      - "8096:8096" # LAN HTTP for the Roku app (http://192.168.0.9:8096); TLS rides Traefik
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.jellyfin.loadbalancer.server.port=8096
+      - traefik.http.routers.jellyfin.rule=Host(`jellyfin.thenewmans.casa`)
+      # Deliberately NO authelia middleware — see header comment
+    volumes:
+      - ../appdata/jellyfin:/config
+    restart: unless-stopped

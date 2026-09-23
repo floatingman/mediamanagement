@@ -32,7 +32,7 @@ data:
         torrent:       {rule: Host(`torrent.thenewmans.casa`),       entryPoints: [websecure], service: vm-torrent,       tls: {certResolver: letsencrypt}}
         search:        {rule: Host(`search.thenewmans.casa`),        entryPoints: [websecure], service: vm-search,        tls: {certResolver: letsencrypt}}
         minecraft:     {rule: Host(`minecraft.thenewmans.casa`),     entryPoints: [websecure], service: vm-minecraft,     tls: {certResolver: letsencrypt}}
-        # perplexica + nostalgiatv live in IngressRoutes (vm-resident-routes.yaml):
+        # perplexica + nostalgiatv + jellyfin live in IngressRoutes (vm-resident-routes.yaml):
         # file-provider routes can't reference the authelia CRD middleware
       services:
         vm-rancher:        {loadBalancer: {serversTransport: vm-https-transport, servers: [{url: "https://192.168.0.22:443"}]}}

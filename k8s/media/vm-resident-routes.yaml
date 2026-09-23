@@ -57,3 +57,30 @@ spec:
           namespace: auth
       services: [{name: nostalgiatv-vm, port: 19850}]
   tls: {certResolver: letsencrypt}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: jellyfin-vm, namespace: media}
+spec:
+  ports: [{port: 8096, targetPort: 8096}]
+---
+apiVersion: v1
+kind: Endpoints
+metadata: {name: jellyfin-vm, namespace: media}
+subsets:
+  - addresses: [{ip: 192.168.0.9}]
+    ports: [{port: 8096}]
+---
+# NO authelia middleware: Jellyfin authenticates with its own user accounts —
+# TV/app clients (Roku) can't complete an SSO redirect. WAN exposure is the
+# Jellyfin login screen only.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: jellyfin-vm, namespace: media}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`jellyfin.thenewmans.casa`)
+      kind: Rule
+      services: [{name: jellyfin-vm, port: 8096}]
+  tls: {certResolver: letsencrypt}
