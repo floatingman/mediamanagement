@@ -46,7 +46,7 @@ services:
     restart: unless-stopped
 
   nostalgiatv:
-    # Retro-TV EPG/scheduler over the Plex library (tunarr alternative). The
+    # Retro-TV EPG/scheduler over the Plex library (replaced tunarr 2026-09-22). The
     # server only builds schedules/metadata — playback is HLS served direct
     # by Plex, so no GPU runtime here. App is compiled (Cython .so); all
     # setup is UI-driven: Settings → Plex URL http://192.168.0.9:32400 + token.

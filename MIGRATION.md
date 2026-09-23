@@ -34,7 +34,7 @@ Answer these up front; they determine several steps below.
    set `LAN_SUBNET` in `.env`. See [§7 Network gotchas](#7-network--ip-gotchas).
 2. **Do the NAS boxes keep their IPs?** `192.168.0.5` and `192.168.0.6` are in
    `/etc/fstab`. If they move, update the new server's fstab.
-3. **Does the new server have an NVIDIA GPU?** Plex, Tunarr, and Ollama use
+3. **Does the new server have an NVIDIA GPU?** Plex and Ollama use
    `runtime: nvidia`. No GPU → remove those lines (see [§7](#7-network--ip-gotchas)).
 4. **New public IP?** `cloudflare-ddns` updates `thenewmans.casa` automatically,
    so a new WAN IP is fine — it'll just re-publish.
@@ -72,8 +72,8 @@ sudo nvidia-ctk runtime configure --runtime=docker
 sudo systemctl restart docker
 # Verify: docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi
 ```
-No GPU? Delete `runtime: nvidia` + the `NVIDIA_*` env lines from Plex, Tunarr,
-and Ollama in the compose files.
+No GPU? Delete `runtime: nvidia` + the `NVIDIA_*` env lines from Plex and
+Ollama in the compose files.
 
 ### 2.3 Re-mount the NAS media shares
 The stack expects these mount points to exist with identical paths. Recreate the
@@ -302,7 +302,7 @@ docker compose up -d proxy domain          # Traefik + DDNS (certs re-issue)
 docker compose up -d authelia              # SSO gate
 docker compose up -d vpn sabnzbd torrent   # downloaders (vpn before torrent)
 docker compose up -d radarr sonarr lidarr readarr bazarr profilarr recyclarr
-docker compose up -d seerr tautulli agregarr cleanuparr maintainerr audiobookshelf
+docker compose up -d seerr tautulli agregarr cleanuparr maintainerr audiobookshelf nostalgiatv
 docker compose up -d ollama                # GPU model server
 docker compose up -d linkwarden-db linkwarden-search linkwarden
 docker compose up -d mcsmanager-web mcsmanager-daemon
@@ -363,7 +363,7 @@ docker exec nordvpn wget -qO- https://api.ipify.org   # should show NordVPN exit
 | **seerr** | `appdata/seerr/` | 60 MB | SQLite — stop before copy | Requests list |
 | **tautulli** | `appdata/tautulli/` | 267 MB | SQLite + Plex token | Connects to Plex |
 | **agregarr** | `appdata/agregarr/` | 491 MB | | Collections display |
-| **nostalgiatv** | `appdata/nostalgiatv/` | <1 GB | UI-driven setup (Plex URL + token) | WebUI loads, channels fill |
+| **nostalgiatv** | `appdata/nostalgiatv/` | <1 GB | UI-driven setup (Plex URL + token); started with the media group in §9 | WebUI loads, channels fill |
 | **cleanuparr** | `appdata/cleanuparr/` | 4.4 MB | | WebUI loads |
 | **maintainerr** | `appdata/maintainerr/` | 928 KB | `MAINTAINERR_GITHUB_TOKEN` | Rules present |
 | **audiobookshelf** | `appdata/audiobookshelf/` | 166 MB | media on NAS shares | Library loads |

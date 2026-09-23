@@ -37,7 +37,7 @@ Docker Compose-based home media automation stack for the Newman household.
 ## Prerequisites
 
 - Docker and Docker Compose v2
-- NVIDIA GPU with `nvidia-container-toolkit` installed (used by Tunarr and Ollama)
+- NVIDIA GPU with `nvidia-container-toolkit` installed (used by Plex transcoding and Ollama)
 - A Cloudflare account managing `thenewmans.casa` with a wildcard DNS A record
 - A NordVPN account with WireGuard access
 
