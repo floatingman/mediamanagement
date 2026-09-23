@@ -23,7 +23,7 @@ Docker Compose-based home media automation stack for the Newman household.
 | Recyclarr | — | Quality profile sync (run manually) |
 | Profilarr | `profilarr.thenewmans.casa` | Profile management |
 | Agregarr | `agregarr.thenewmans.casa` | Collection display |
-| Tunarr | `tunarr.thenewmans.casa` | TV channel simulator |
+| NostalgiaTV | `nostalgiatv.thenewmans.casa` | Retro-TV channels from Plex (login via Authelia) |
 | Cleanuparr | `cleanuparr.thenewmans.casa` | Download queue cleanup |
 | Maintainerr | `maintainerr.thenewmans.casa` | Library maintenance |
 | Audiobookshelf | `audiobookshelf.thenewmans.casa` | Audiobook/podcast server |
@@ -37,7 +37,7 @@ Docker Compose-based home media automation stack for the Newman household.
 ## Prerequisites
 
 - Docker and Docker Compose v2
-- NVIDIA GPU with `nvidia-container-toolkit` installed (used by Tunarr and Ollama)
+- NVIDIA GPU with `nvidia-container-toolkit` installed (used by Plex transcoding and Ollama)
 - A Cloudflare account managing `thenewmans.casa` with a wildcard DNS A record
 - A NordVPN account with WireGuard access
 

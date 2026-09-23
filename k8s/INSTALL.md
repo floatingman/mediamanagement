@@ -17,7 +17,7 @@ Everything here assumes the layout documented in this repo's `CLAUDE.md`
                                       |
         +---------------------------+----------------------------+
         |  K3s cluster (3 servers) |  Docker VM 192.168.0.9      |
-        |  traefik edge (hostPort) |  plex, tunarr, ollama,      |
+        |  traefik edge (hostPort) |  plex, ollama, nostalgiatv  |
         |  linkwarden (Wave 1)     |  perplexica, searxng,       |
         |  *arr + downloaders      |  mcsmanager  (permanent —   |
         |    (Waves 2-3, later)    |  cluster nodes have no GPU) |
@@ -297,9 +297,9 @@ Public IP is unchanged, so cloudflare-ddns needs nothing.
 
 ```bash
 for h in auth radarr sonarr lidarr bazarr sabnzbd torrent seerr tautulli \
-         agregarr tunarr cleanuparr maintainerr profilarr titlecardmaker \
+         agregarr cleanuparr maintainerr profilarr titlecardmaker \
          audiobookshelf calibre romm minecraft convertx zipline sync \
-         search perplexica linkwarden rancher; do
+         search perplexica linkwarden rancher nostalgiatv; do
   echo -n "$h: "; curl -sIo /dev/null -w '%{http_code}\n' https://$h.thenewmans.casa
 done
 ```
@@ -345,7 +345,7 @@ Any 5xx/timeout: `kubectl -n traefik logs deploy/traefik` and the dashboard.
 | 2 | *arr stack — DONE 2026-09-16 (ns `media`, 12 deployments + recyclarr CronJob) | NOTE: titlecardmaker-webui is in a PRIVATE ghcr registry; the media ns needs secret `ghcr-tcm` (docker-registry type, from the VM's ~/.docker/config.json ghcr auth) — recreate it if the namespace is ever rebuilt |
 | 3 | sabnzbd, syncthing — DONE 2026-09-16 in k8s; gluetun+qbittorrent ROLLED BACK to the Docker VM same day | gluetun-on-k8s has an architectural healthcheck/DNS-interceptor race (flaps every ~6-13s, identical across nodes/keys/DNS configs; same image+key perfect on docker — full matrix in TROUBLESHOOTING.md). VM runs it flawlessly: zero flaps, NAT-PMP + GSP port-sync live. k8s Deployment kept scaled-to-0 with a Service+Endpoints stub for the *arr 'torrent' DNS name; retry when upstream gluetun fixes the race |
 | 3b | romm (+mariadb) and calibre-web — DONE 2026-09-16 (ns `media`) | romm needs `enableServiceLinks: false` (its Service name makes kubelet inject `ROMM_PORT=tcp://...` which breaks its nginx template) and a tcpSocket readiness probe (its /api returns 401 unauthenticated). Libraries on nfs-backups PV |
-| never | plex, tunarr, ollama, perplexica, searxng, mcsmanager | no GPUs on cluster nodes; mcsmanager needs docker.sock |
+| never | plex, ollama, perplexica, searxng, nostalgiatv, mcsmanager | no GPUs on cluster nodes (nostalgiatv needs none — playback is Plex-side HLS); mcsmanager needs docker.sock |
 
 ## 12. Node storage sizing & Wave 2 prep
 

@@ -45,24 +45,28 @@ services:
     # No Traefik labels — Plex is reached via app.plex.tv / host IP, not a subdomain.
     restart: unless-stopped
 
-  tunarr:
-    image: chrisbenincasa/tunarr:latest
-    container_name: tunarr
-    ports:
-      - ${TUNARR_SERVER_PORT:-8000}:8000
-    runtime: nvidia
+  nostalgiatv:
+    # Retro-TV EPG/scheduler over the Plex library (replaced tunarr 2026-09-22). The
+    # server only builds schedules/metadata — playback is HLS served direct
+    # by Plex, so no GPU runtime here. App is compiled (Cython .so); all
+    # setup is UI-driven: Settings → Plex URL http://192.168.0.9:32400 + token.
+    image: purestream711/nostalgiatv-server:latest
+    container_name: nostalgiatv
     environment:
-      - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1003}
       - TZ=${TZ:-America/Chicago}
-      - NVIDIA_VISIBLE_DEVICES=all
+    ports:
+      - "19850:19850" # LAN-exposed for HDHR-tuner clients (Plex DVR etc.); web UI rides Traefik
     labels:
       - traefik.enable=true
-      - traefik.http.services.tunarr.loadbalancer.server.port=8000
-      - traefik.http.routers.tunarr.rule=Host(`tunarr.thenewmans.casa`)
-      - traefik.http.routers.tunarr.middlewares=authelia@file # k8s authelia via transition.yaml
+      - traefik.http.services.nostalgiatv.loadbalancer.server.port=19850
+      - traefik.http.routers.nostalgiatv.rule=Host(`nostalgiatv.thenewmans.casa`)
+      - traefik.http.routers.nostalgiatv.middlewares=authelia@file # no built-in auth
     volumes:
-      # Lives on the fast local data disk (with the Plex store) — tunarr's ~11G of
-      # DB + meilisearch index + image cache saturates the slow root virtual disk
-      # during library scans, wedging the whole VM's I/O.
-      - ${PLEX_DATA_PATH:-/var/lib/plexmediaserver}/tunarr-data:/config/tunarr
+      # Entrypoint chowns these three to PUID:PGID; SQLite DB, settings and
+      # uploaded channel logos live here.
+      - ../appdata/nostalgiatv/data:/app/data
+      - ../appdata/nostalgiatv/config:/app/config
+      - ../appdata/nostalgiatv/logos:/app/logos
     restart: unless-stopped

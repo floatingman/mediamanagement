@@ -9,7 +9,7 @@
 #   docker compose pull && docker compose up -d
 include:
   - compose/infrastructure.yaml   # traefik (edge), cloudflare-ddns
-  - compose/media-server.yaml     # plex, tunarr (GPU)
+  - compose/media-server.yaml     # plex (GPU), nostalgiatv
   - compose/ai.yaml               # ollama, perplexica (GPU)
   - compose/utilities.yaml        # searxng + valkey (GPU-bound via perplexica)
   - compose/gaming.yaml           # mcsmanager web/daemon
