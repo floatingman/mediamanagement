@@ -13,7 +13,7 @@ downtime.
 |----------|------|--------|-------|
 | Compose + config (git) | tiny | ✅ git clone | `compose/`, `*.yaml`, `CLAUDE.md` |
 | Secrets | tiny | ✅ copy securely | `.env`, `appdata/recyclarr/secrets.yml`, `appdata/authelia/users_database.yml` |
-| App data (configs + DBs) | **~108 GB** | ✅ rsync | `appdata/` |
+| App data (configs + DBs) | **~96 GB** | ✅ rsync | `appdata/` |
 | Plex server state | **~847 GB** | ✅ rsync (special) | `/var/lib/plexmediaserver` (`PLEX_DATA_PATH`) |
 | Media libraries (movies/TV/music) | ~273 TB | ❌ **stays on NAS** | `//192.168.0.5` + `//192.168.0.6` SMB shares |
 | Let's Encrypt certs | 228 KB | ⚠️ optional | `letsencrypt/` (re-issuable) |
@@ -155,7 +155,7 @@ PLEX_PGID=1003
 
 ---
 
-## 4. Phase 2 — Migrate app data (`appdata/`, ~108 GB)
+## 4. Phase 2 — Migrate app data (`appdata/`, ~96 GB)
 
 Most services store config in `appdata/<service>`. The safe procedure is
 **stop everything on the old server, then rsync once**.
@@ -175,7 +175,7 @@ Radarr/Sonarr/Lidarr/Readarr, Plex, Authelia, Tautulli, Agregarr, etc. all use
 uses **PostgreSQL** — same rule. Stopping first guarantees consistency.
 
 ### Optional: two-stage to cut downtime
-If ~108 GB over your link is too slow for a single stop window:
+If ~96 GB over your link is too slow for a single stop window:
 ```bash
 # Stage 1 (old still running) — everything EXCEPT live databases
 sudo rsync -aHSx --numeric-ids \
