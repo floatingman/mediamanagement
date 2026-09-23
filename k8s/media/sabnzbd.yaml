@@ -37,8 +37,12 @@ spec:
             - {name: syndl, mountPath: /downloads} # dedicated Synology volume3/downloads share since 2026-09-19 (NFS squash: map all users to admin, same as the other shares; tree nzb/complete pre-made 0777)
             - {name: rm, mountPath: /watch, subPath: Syncs/nzb}
           resources:
-            requests: {cpu: 100m, memory: 256Mi}
-            limits: {memory: 2Gi}
+            # 2Gi OOM-killed the python process 6x in 11 min (2026-09-22
+            # 21:24-21:35) during a deep-queue DirectUnpack burst — s6
+            # respawned it each time, blinding the *arrs for ~2 min per kill.
+            # Working set rides 1.75Gi+ under load; 3Gi with node at 44%.
+            requests: {cpu: 100m, memory: 512Mi}
+            limits: {memory: 3Gi}
           readinessProbe:
             tcpSocket: {port: 8080}
             initialDelaySeconds: 20
