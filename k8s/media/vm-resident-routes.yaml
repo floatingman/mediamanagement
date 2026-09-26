@@ -29,7 +29,7 @@ spec:
         - name: authelia
           namespace: auth
       services: [{name: perplexica-vm, port: 3000}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}
 ---
 apiVersion: v1
 kind: Service
@@ -56,7 +56,7 @@ spec:
         - name: authelia
           namespace: auth
       services: [{name: nostalgiatv-vm, port: 19850}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}
 ---
 apiVersion: v1
 kind: Service
@@ -83,4 +83,4 @@ spec:
     - match: Host(`jellyfin.thenewmans.casa`)
       kind: Rule
       services: [{name: jellyfin-vm, port: 8096}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

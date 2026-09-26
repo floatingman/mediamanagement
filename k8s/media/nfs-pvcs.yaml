@@ -74,3 +74,16 @@ spec:
   resources:
     requests:
       storage: 40Ti
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-usbdrive
+  labels: {excluded_from_alerts: "true"}
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: nfs-usbdrive
+  resources:
+    requests:
+      storage: 15Ti # actual USB disk size; absolute-bytes alerts in monitoring cover real thresholds

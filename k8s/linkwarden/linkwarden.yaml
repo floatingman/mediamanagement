@@ -88,4 +88,4 @@ spec:
         - name: linkwarden
           port: 3000
   tls:
-    certResolver: letsencrypt
+    secretName: thenewmans-certs

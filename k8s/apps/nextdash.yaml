@@ -87,4 +87,4 @@ spec:
         - name: nextdash
           port: 8080
   tls:
-    certResolver: letsencrypt
+    secretName: thenewmans-certs

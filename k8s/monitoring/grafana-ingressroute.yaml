@@ -13,4 +13,4 @@ spec:
     - match: Host(`grafana.thenewmans.casa`)
       kind: Rule
       services: [{name: monitoring-grafana, port: 80}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

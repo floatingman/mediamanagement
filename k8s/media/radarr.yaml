@@ -28,6 +28,7 @@ spec:
             - {name: rm, mountPath: /ratchetmedia, subPath: Movies}
             - {name: syndl, mountPath: /downloads} # Synology volume3/downloads since 2026-09-19
             - {name: rm, mountPath: /torrentdownloads, subPath: Downloads/torrents/complete}
+            - {name: usb, mountPath: /usbdrive}
           resources:
             requests: {cpu: 100m, memory: 256Mi}
             limits: {memory: 2Gi}
@@ -44,6 +45,8 @@ spec:
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
         - name: syndl
           persistentVolumeClaim: {claimName: nfs-synology-downloads}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -69,4 +72,4 @@ spec:
     - match: Host(`radarr.thenewmans.casa`)
       kind: Rule
       services: [{name: radarr, port: 7878}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

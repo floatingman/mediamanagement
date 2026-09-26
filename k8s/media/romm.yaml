@@ -77,6 +77,7 @@ spec:
             - {name: data, mountPath: /romm/assets, subPath: assets}
             - {name: data, mountPath: /romm/config, subPath: config}
             - {name: bk, mountPath: /romm/library/roms, subPath: Games/Roms/Core_Roms}
+            - {name: usb, mountPath: /usbdrive}
           resources:
             requests: {cpu: 100m, memory: 512Mi}
             limits: {memory: 4Gi}
@@ -89,6 +90,8 @@ spec:
           persistentVolumeClaim: {claimName: romm-data}
         - name: bk
           persistentVolumeClaim: {claimName: nfs-backups}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -129,4 +132,4 @@ spec:
     - match: Host(`romm.thenewmans.casa`)
       kind: Rule
       services: [{name: romm, port: 8080}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

@@ -173,4 +173,4 @@ spec:
         - name: zipline
           port: 3000
   tls:
-    certResolver: letsencrypt
+    secretName: thenewmans-certs

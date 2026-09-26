@@ -72,6 +72,9 @@ spec:
         #                                  nfs-backups and nfs-synology-downloads
         #                                  exports; do NOT add those (triple dupes)
         #   nfs-ratchetmedia            → Unraid /mnt/user/Media
+        #   nfs-usbdrive                → Synology /volumeUSB1 (external USB
+        #                                  disk — its own physical volume, NOT
+        #                                  volume1/volume3 df)
         # max by() collapses the per-node duplicate series; job="kubelet"
         # excludes the apiserver-proxied copies (exported_namespace).
         - alert: NfsVolumeFillingUp
@@ -79,7 +82,7 @@ spec:
             max by (namespace, persistentvolumeclaim) (
               kubelet_volume_stats_available_bytes{
                 job="kubelet", namespace="media",
-                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia|nfs-synology-downloads|nfs-backups"
+                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia|nfs-synology-downloads|nfs-backups|nfs-usbdrive"
               }
             ) < 1024 * 1024 * 1024 * 1024
           for: 30m
@@ -96,7 +99,7 @@ spec:
             max by (namespace, persistentvolumeclaim) (
               kubelet_volume_stats_available_bytes{
                 job="kubelet", namespace="media",
-                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia|nfs-synology-downloads|nfs-backups"
+                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia|nfs-synology-downloads|nfs-backups|nfs-usbdrive"
               }
             ) < 256 * 1024 * 1024 * 1024
           for: 10m

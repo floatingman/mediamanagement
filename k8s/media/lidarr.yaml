@@ -25,6 +25,7 @@ spec:
             - {name: config, mountPath: /config}
             - {name: pme, mountPath: /media, subPath: Audio/music}
             - {name: syndl, mountPath: /downloads} # Synology volume3/downloads since 2026-09-19
+            - {name: usb, mountPath: /usbdrive}
           resources:
             requests: {cpu: 100m, memory: 256Mi}
             limits: {memory: 4Gi} # 2Gi GC-thrashed on bulk imports (15k-track rescan post-OOM stalled at 88% CPU / 1.5G RSS; DB is 4.5G)
@@ -39,6 +40,8 @@ spec:
           persistentVolumeClaim: {claimName: nfs-perceptormediaexpansion}
         - name: syndl
           persistentVolumeClaim: {claimName: nfs-synology-downloads}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -64,4 +67,4 @@ spec:
     - match: Host(`lidarr.thenewmans.casa`)
       kind: Rule
       services: [{name: lidarr, port: 8686}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

@@ -28,6 +28,7 @@ spec:
             - {name: config, mountPath: /config, subPath: config}
             - {name: config, mountPath: /custom-cont-init.d, subPath: config/custom-cont-init.d}
             - {name: bk, mountPath: /books, subPath: Books}
+            - {name: usb, mountPath: /usbdrive}
           resources:
             requests: {cpu: 50m, memory: 256Mi}
             limits: {memory: 2Gi}
@@ -40,6 +41,8 @@ spec:
           persistentVolumeClaim: {claimName: calibre-config}
         - name: bk
           persistentVolumeClaim: {claimName: nfs-backups}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -65,4 +68,4 @@ spec:
     - match: Host(`calibre.thenewmans.casa`)
       kind: Rule
       services: [{name: calibre-web, port: 8083}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

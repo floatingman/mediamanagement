@@ -275,12 +275,21 @@ reaches them by IP):
 `docker compose up -d searxng perplexica` to apply.
 (nextdash migrated in wave 1 — no temporary port needed anymore.)
 
-**9b. Carry the certs over** (skip to re-issue from scratch):
+**9b. Certificates** (2026-09-26: no carry-over needed anymore):
+
+Certs are issued by **cert-manager** (wildcard `*.thenewmans.casa` via DNS-01
+Cloudflare) — see `k8s/foundation/cert-manager.yaml`. Every namespace has its
+own `Certificate` copy (secrets can't cross namespaces) and every IngressRoute
+references `secretName: thenewmans-certs`. The edge is stateless: replicas
+mount the wildcard secret at `/certs` and need no shared acme.json, so the
+edge scales to any number of replicas. The old acme.json copy procedure below
+is historical.
 
 ```bash
-kubectl -n traefik cp letsencrypt/acme.json deploy/traefik:/data/acme.json --no-preserve
-kubectl -n traefik exec deploy/traefik -- chmod 600 /data/acme.json
-kubectl -n traefik rollout restart deploy/traefik
+# HISTORICAL (single-replica acme.json era, pre-2026-09-26):
+# kubectl -n traefik cp letsencrypt/acme.json deploy/traefik:/data/acme.json --no-preserve
+# kubectl -n traefik exec deploy/traefik -- chmod 600 /data/acme.json
+# kubectl -n traefik rollout restart deploy/traefik
 ```
 
 **9c. Move the edge:**

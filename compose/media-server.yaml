@@ -40,6 +40,9 @@ services:
       - ${PERCEPTOR_EXPANSION:-/mnt/perceptormediaexpansion}:/mnt/perceptormediaexpansion
       - ${RATCHET_MEDIA:-/mnt/ratchetmedia}:/mnt/ratchetmedia
       - ${RATCHET_MEDIA:-/mnt/ratchetmedia}/Downloads:/mnt/downloads
+      # Overflow Movies/TVShows storage (Synology external USB disk over NFS,
+      # 2026-09-25); radarr/sonarr in k8s save here via the nfs-usbdrive PV.
+      - ${USB_MEDIA:-/mnt/usbdrive}:/mnt/usbdrive
       # Keep transcodes on fast host tmp instead of inside the (huge) data dir.
       - /tmp:/transcode
     # No Traefik labels — Plex is reached via app.plex.tv / host IP, not a subdomain.

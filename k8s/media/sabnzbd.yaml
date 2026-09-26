@@ -36,6 +36,7 @@ spec:
             - {name: incomplete, mountPath: /incomplete}
             - {name: syndl, mountPath: /downloads} # dedicated Synology volume3/downloads share since 2026-09-19 (NFS squash: map all users to admin, same as the other shares; tree nzb/complete pre-made 0777)
             - {name: rm, mountPath: /watch, subPath: Syncs/nzb}
+            - {name: usb, mountPath: /usbdrive}
           resources:
             # 2Gi OOM-killed the python process 6x in 11 min (2026-09-22
             # 21:24-21:35) during a deep-queue DirectUnpack burst — s6
@@ -56,6 +57,8 @@ spec:
           persistentVolumeClaim: {claimName: sabnzbd-incomplete}
         - name: syndl
           persistentVolumeClaim: {claimName: nfs-synology-downloads}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -90,4 +93,4 @@ spec:
     - match: Host(`sabnzbd.thenewmans.casa`)
       kind: Rule
       services: [{name: sabnzbd, port: 8080}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

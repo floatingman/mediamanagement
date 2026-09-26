@@ -25,3 +25,4 @@ resources:
   - authelia.yaml
   - valkey.yaml
   - middleware.yaml
+  - certificate.yaml

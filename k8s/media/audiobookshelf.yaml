@@ -27,6 +27,7 @@ spec:
             - {name: pme, mountPath: /podcasts, subPath: Audio/podcasts}
             - {name: config, mountPath: /config, subPath: config}
             - {name: config, mountPath: /metadata, subPath: metadata}
+            - {name: usb, mountPath: /usbdrive}
           resources:
             requests: {cpu: 50m, memory: 256Mi}
             limits: {memory: 2Gi}
@@ -39,6 +40,8 @@ spec:
           persistentVolumeClaim: {claimName: audiobookshelf-config}
         - name: pme
           persistentVolumeClaim: {claimName: nfs-perceptormediaexpansion}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -64,4 +67,4 @@ spec:
     - match: Host(`audiobookshelf.thenewmans.casa`)
       kind: Rule
       services: [{name: audiobookshelf, port: 80}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

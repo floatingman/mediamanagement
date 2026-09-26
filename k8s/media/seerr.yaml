@@ -59,4 +59,4 @@ spec:
     - match: Host(`seerr.thenewmans.casa`)
       kind: Rule
       services: [{name: seerr, port: 5055}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

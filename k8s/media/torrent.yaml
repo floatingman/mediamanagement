@@ -79,6 +79,7 @@ spec:
             - {name: config, mountPath: /config}
             - {name: syndl, mountPath: /downloads, subPath: torrents} # Synology volume3/downloads share since 2026-09-19 (same share as usenet staging; Ratchet pool degraded)
             - {name: rm, mountPath: /watch, subPath: Syncs/torrent}
+            - {name: usb, mountPath: /usbdrive}
           resources:
             requests: {cpu: 100m, memory: 256Mi}
             limits: {memory: 2Gi}
@@ -110,6 +111,8 @@ spec:
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
         - name: syndl
           persistentVolumeClaim: {claimName: nfs-synology-downloads}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 # ROLLED BACK TO DOCKER VM (2026-09-16): gluetun-in-k8s has an architectural
 # healthcheck/DNS-interceptor startup race (see TROUBLESHOOTING.md); the same

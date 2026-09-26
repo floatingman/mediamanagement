@@ -116,3 +116,24 @@ spec:
     volumeAttributes:
       server: 192.168.0.6
       share: /volume3/downloads
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-usbdrive # Synology /volumeUSB1 (external USB disk): overflow Movies/TVShows storage
+spec:
+  capacity:
+    storage: 15Ti # actual disk size (df: 15T, 7.3T free at setup 2026-09-25)
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: "" # static: never dynamically re-provisioned
+  claimRef:
+    name: nfs-usbdrive
+    namespace: media
+  mountOptions: [vers=3, hard, noatime, rsize=1048576, wsize=1048576, timeo=100, retrans=3]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: 192.168.0.6-volumeUSB1-usbshare1-2
+    volumeAttributes:
+      server: 192.168.0.6
+      share: /volumeUSB1/usbshare1-2

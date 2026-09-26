@@ -1,13 +1,27 @@
 # Traefik v3 helm release — k8s replacement for the Docker-VM edge.
 #
-# Ports 80/443 are hostPorts pinned to ONE node (single entry node, same
-# topology as today's single VM). Label it before installing:
-#   kubectl label node <node> newman.media/ingress=true
-# For a multi-node edge later: install MetalLB, drop the hostPort entries
-# and set service.type: LoadBalancer instead.
+# Ports 80/443 are hostPorts on EVERY control-plane node (all three carry the
+# newman.media/ingress=true label since 2026-09-26). Each replica binds its
+# own node's 80/443; the Docker-VM edge (traefik-dyn/transition.yaml) loads
+# balances across all node IPs with health checks. One replica per node via
+# podAntiAffinity — any single node loss leaves two edges serving.
+#
+# Cert continuity model: NO shared acme.json (an RWO PVC can't span 3
+# replicas). Each replica issues its own certs via DNS-01 against Cloudflare
+# (cheap, no HTTP validation limits), so replicas never need to share state.
+# Fresh pods re-issue on start; brief self-signed window per new pod.
 deployment:
   kind: Deployment
-  replicas: 1
+  replicas: 3
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values: [traefik]
+        topologyKey: kubernetes.io/hostname
 nodeSelector:
   newman.media/ingress: "true"
 service:
@@ -27,9 +41,8 @@ ports:
     http:
       tls:
         enabled: true
-        # default certResolver for every websecure router (parity with the
-        # docker labels, which set it per-router)
-        certResolver: letsencrypt
+        # every router serves the wildcard secret (thenewmans-certs) issued
+        # by cert-manager — see k8s/foundation/cert-manager.yaml
   traefik:
     port: 9000
 # Dashboard: NOT exposed (hardening — the docker edge published :8080 wide
@@ -44,36 +57,13 @@ providers:
   kubernetesCRD:
     allowCrossNamespace: true
 
-# The ACME email arrives via Traefik's env<->flag mapping from the Secret
-# created by k8s/foundation (traefik-cloudflare).
-env:
-  - name: CF_DNS_API_TOKEN
-    valueFrom:
-      secretKeyRef:
-        name: traefik-cloudflare
-        key: CF_DNS_API_TOKEN
-  - name: TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL
-    valueFrom:
-      secretKeyRef:
-        name: traefik-cloudflare
-        key: ACME_EMAIL
 additionalArguments:
-  - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
-  - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
-  - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
-  - --certificatesresolvers.letsencrypt.acme.storage=/data/acme.json
   - --providers.file.directory=/etc/traefik/dynamic
   - --providers.file.watch=true
-# acme.json lives on a PVC. Cert continuity: copy the existing VM cert store
-# in after first install (skip to re-issue from scratch):
-#   kubectl -n traefik cp ../letsencrypt/acme.json deploy/traefik:/data/ --no-preserve
-#   kubectl -n traefik exec deploy/traefik -- chmod 600 /data/acme.json
-#   kubectl -n traefik rollout restart deploy/traefik
+# Per-replica ephemeral /data (acme.json): no shared PVC — see header. The
+# pre-2026-09-26 acme PVC (named "traefik") was deleted at cutover.
 persistence:
-  enabled: true
-  storageClass: local-path # k3s default; adjust to your cluster's class
-  accessModes: [ReadWriteOnce]
-  size: 1Gi
+  enabled: false
 # Transition routing: subdomains still served by the Docker VM, plus the
 # authelia-vm forward-auth middleware (k8s/foundation/…-services.yaml
 # ConfigMap, which MUST be applied before the helm release).
@@ -81,3 +71,8 @@ volumes:
   - name: traefik-external-services
     mountPath: /etc/traefik/dynamic
     type: configMap
+  # wildcard cert (tls.crt/tls.key) for the file-provider VM routes —
+  # issued by cert-manager, see k8s/foundation/cert-manager.yaml
+  - name: thenewmans-certs
+    mountPath: /certs
+    type: secret

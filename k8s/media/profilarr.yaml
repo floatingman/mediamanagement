@@ -55,4 +55,4 @@ spec:
     - match: Host(`profilarr.thenewmans.casa`)
       kind: Rule
       services: [{name: profilarr, port: 6868}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

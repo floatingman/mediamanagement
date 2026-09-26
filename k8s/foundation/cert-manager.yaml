@@ -1,0 +1,43 @@
+# Wildcard cert infrastructure (2026-09-26): cert-manager issues ONE
+# wildcard via DNS-01 Cloudflare; every namespace gets its own Certificate
+# copy (secrets can't cross namespaces) and routers reference
+# secretName: thenewmans-certs. This replaced per-router acme resolvers so
+# the edge can run N stateless replicas — the traefik chart forbids acme
+# resolvers with replicas > 1, and a shared RWO acme.json can't span
+# replicas anyway.
+#
+# The solver secret lives in the CERT-MANAGER namespace — a ClusterIssuer's
+# secretRefs resolve where cert-manager runs, not in the target namespace:
+#   kubectl -n cert-manager create secret generic cloudflare-api-token \
+#     --from-literal=api-token=$(grep '^CF_DNS_API_TOKEN=' \
+#       k8s/foundation/env.txt | cut -d= -f2-)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-cloudflare
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: floatingman@posteo.net
+    privateKeySecretRef:
+      name: letsencrypt-cloudflare-account-key
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: thenewmans-wildcard
+  namespace: traefik
+spec:
+  secretName: thenewmans-certs
+  dnsNames:
+    - thenewmans.casa
+    - "*.thenewmans.casa"
+  issuerRef:
+    name: letsencrypt-cloudflare
+    kind: ClusterIssuer

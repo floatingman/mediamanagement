@@ -26,6 +26,7 @@ spec:
             - {name: pm, mountPath: /media, subPath: Video/TV}
             - {name: rm, mountPath: /ratchetmedia, subPath: TVShows}
             - {name: syndl, mountPath: /downloads} # Synology volume3/downloads since 2026-09-19
+            - {name: usb, mountPath: /usbdrive}
           resources:
             requests: {cpu: 100m, memory: 256Mi}
             limits: {memory: 2Gi}
@@ -42,6 +43,8 @@ spec:
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
         - name: syndl
           persistentVolumeClaim: {claimName: nfs-synology-downloads}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -67,4 +70,4 @@ spec:
     - match: Host(`sonarr.thenewmans.casa`)
       kind: Rule
       services: [{name: sonarr, port: 8989}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

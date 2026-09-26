@@ -9,3 +9,4 @@ resources:
   - media-dashboard.yaml
   - grafana-ingressroute.yaml
   - nfs-probe.yaml
+  - certificate.yaml

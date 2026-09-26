@@ -26,6 +26,7 @@ spec:
             - {name: rm, mountPath: /ratchetmediatvshows, subPath: TVShows}
             - {name: pm, mountPath: /Movies, subPath: Video/Movies}
             - {name: pm, mountPath: /TV, subPath: Video/TV}
+            - {name: usb, mountPath: /usbdrive}
           resources:
             requests: {cpu: 50m, memory: 256Mi}
             limits: {memory: 1Gi}
@@ -40,6 +41,8 @@ spec:
           persistentVolumeClaim: {claimName: nfs-perceptormedia}
         - name: rm
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -65,4 +68,4 @@ spec:
     - match: Host(`bazarr.thenewmans.casa`)
       kind: Rule
       services: [{name: bazarr, port: 6767}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

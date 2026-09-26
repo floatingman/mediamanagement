@@ -23,6 +23,7 @@ spec:
             - {name: config, mountPath: /app/config}
             - {name: pm, mountPath: /data/movies, subPath: placeholders/movies}
             - {name: pm, mountPath: /data/tv, subPath: placeholders/tv}
+            - {name: usb, mountPath: /usbdrive}
           resources:
             requests: {cpu: 50m, memory: 128Mi}
             limits: {memory: 1Gi}
@@ -35,6 +36,8 @@ spec:
           persistentVolumeClaim: {claimName: agregarr-config}
         - name: pm
           persistentVolumeClaim: {claimName: nfs-perceptormedia}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -60,4 +63,4 @@ spec:
     - match: Host(`agregarr.thenewmans.casa`)
       kind: Rule
       services: [{name: agregarr, port: 7171}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

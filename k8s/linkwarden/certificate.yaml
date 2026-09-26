@@ -1,0 +1,15 @@
+# Per-namespace copy of the wildcard cert — see
+# k8s/foundation/cert-manager.yaml for the ClusterIssuer and rationale.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: thenewmans-wildcard
+  namespace: linkwarden
+spec:
+  secretName: thenewmans-certs
+  dnsNames:
+    - thenewmans.casa
+    - "*.thenewmans.casa"
+  issuerRef:
+    name: letsencrypt-cloudflare
+    kind: ClusterIssuer

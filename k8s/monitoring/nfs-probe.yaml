@@ -12,6 +12,8 @@
 #                     writes; write perms are proven OK there)
 #   perceptormedia  : read-only stat (write perms not guaranteed on library
 #                     shares; ESTALE fails lookups just the same)
+#   usbdrive        : write + read-back (write perms proven on the USB share,
+#                     2026-09-25; everyone squashes to uid 1024/admin)
 #
 # Fires via the media-stack PrometheusRule: NFSProbeStale (probe failing) and
 # NFSProbeSilent (probe itself stopped running >15m).
@@ -47,6 +49,12 @@ spec:
                   OK=0
                   if timeout 15 ls /perceptor >/dev/null 2>&1; then OK=1; fi
                   printf 'nfs_probe_success{share="perceptormedia"} %s\n' "$OK" >> /tmp/metrics
+                  OK=0
+                  if echo "$TS" > /usb/.nfs-probe 2>/dev/null \
+                     && [ "$(cat /usb/.nfs-probe 2>/dev/null)" = "$TS" ]; then
+                    OK=1
+                  fi
+                  printf 'nfs_probe_success{share="usbdrive"} %s\n' "$OK" >> /tmp/metrics
                   printf 'nfs_probe_timestamp_seconds %s\n' "$TS" >> /tmp/metrics
                   curl -sf --max-time 15 -X POST \
                     --data-binary @/tmp/metrics \
@@ -54,8 +62,11 @@ spec:
               volumeMounts:
                 - {name: rm, mountPath: /ratchet, subPath: Downloads}
                 - {name: pm, mountPath: /perceptor, subPath: Video/TV}
+                - {name: usb, mountPath: /usb}
           volumes:
             - name: rm
               persistentVolumeClaim: {claimName: nfs-ratchetmedia}
             - name: pm
               persistentVolumeClaim: {claimName: nfs-perceptormedia}
+            - name: usb
+              persistentVolumeClaim: {claimName: nfs-usbdrive}

@@ -73,12 +73,33 @@ http:
     grafana-k8s:       {rule: Host(`grafana.thenewmans.casa`),       entryPoints: [websecure], service: k8s-edge, tls: {certResolver: letsencrypt}}
   services:
     k8s-edge:
+      # All three control-plane nodes carry hostPort 443 (newman.media/ingress
+      # label on every node, 3-replica Traefik). Health check fails a node out
+      # in ~5s if its edge freezes (2026-09-26 incident class: recovery IO
+      # starved a guest while it kept accepting TCP).
       loadBalancer:
         serversTransport: k8s-edge-transport
-        servers: [{url: "https://192.168.0.19:443"}]
+        healthCheck:
+          path: /
+          status: "200-499" # a frozen-host 404-free node answers anything alive
+          interval: 5s
+          timeout: 3s
+        servers:
+          - {url: "https://192.168.0.19:443"}
+          - {url: "https://192.168.0.20:443"}
+          - {url: "https://192.168.0.21:443"}
     k8s-authelia:
+      # NodePort is cluster-wide — every node IP serves it.
       loadBalancer:
-        servers: [{url: "http://192.168.0.19:30991"}]
+        healthCheck:
+          path: /
+          status: "200-499"
+          interval: 5s
+          timeout: 3s
+        servers:
+          - {url: "http://192.168.0.19:30991"}
+          - {url: "http://192.168.0.20:30991"}
+          - {url: "http://192.168.0.21:30991"}
     rancher-mgmt-vm:
       loadBalancer:
         serversTransport: k8s-edge-transport

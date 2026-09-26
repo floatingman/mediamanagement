@@ -58,4 +58,4 @@ spec:
     - match: Host(`tautulli.thenewmans.casa`)
       kind: Rule
       services: [{name: tautulli, port: 8181}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

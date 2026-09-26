@@ -24,6 +24,7 @@ spec:
             - {name: config, mountPath: /config}
             - {name: pm, mountPath: /media, subPath: Video/TV}
             - {name: rm, mountPath: /ratchetmedia, subPath: TVShows}
+            - {name: usb, mountPath: /usbdrive}
           resources:
             requests: {cpu: 100m, memory: 512Mi}
             limits: {memory: 4Gi}
@@ -38,6 +39,8 @@ spec:
           persistentVolumeClaim: {claimName: nfs-perceptormedia}
         - name: rm
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -63,4 +66,4 @@ spec:
     - match: Host(`titlecardmaker.thenewmans.casa`)
       kind: Rule
       services: [{name: titlecardmaker, port: 4242}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

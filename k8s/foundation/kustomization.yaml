@@ -27,3 +27,4 @@ resources:
   - namespace.yaml
   - traefik-external-services.yaml
   - nfs-volumes.yaml
+  - cert-manager.yaml

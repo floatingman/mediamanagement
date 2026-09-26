@@ -44,6 +44,7 @@ spec:
           volumeMounts:
             - {name: config, mountPath: /config}
             - {name: rm, mountPath: /sync, subPath: Syncs}
+            - {name: usb, mountPath: /usbdrive}
           resources:
             requests: {cpu: 50m, memory: 128Mi}
             limits: {memory: 1Gi}
@@ -56,6 +57,8 @@ spec:
           persistentVolumeClaim: {claimName: syncthing-config}
         - name: rm
           persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -81,4 +84,4 @@ spec:
     - match: Host(`sync.thenewmans.casa`)
       kind: Rule
       services: [{name: syncthing, port: 8384}]
-  tls: {certResolver: letsencrypt}
+  tls: {secretName: thenewmans-certs}

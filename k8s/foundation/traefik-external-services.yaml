@@ -28,10 +28,10 @@ data:
           # verification would fail. LAN-only hop.
           insecureSkipVerify: true
       routers:
-        rancher:       {rule: Host(`rancher.thenewmans.casa`),       entryPoints: [websecure], service: vm-rancher,       tls: {certResolver: letsencrypt}}
-        torrent:       {rule: Host(`torrent.thenewmans.casa`),       entryPoints: [websecure], service: vm-torrent,       tls: {certResolver: letsencrypt}}
-        search:        {rule: Host(`search.thenewmans.casa`),        entryPoints: [websecure], service: vm-search,        tls: {certResolver: letsencrypt}}
-        minecraft:     {rule: Host(`minecraft.thenewmans.casa`),     entryPoints: [websecure], service: vm-minecraft,     tls: {certResolver: letsencrypt}}
+        rancher:       {rule: Host(`rancher.thenewmans.casa`),       entryPoints: [websecure], service: vm-rancher,       tls: {certificates: [{certFile: /certs/tls.crt, keyFile: /certs/tls.key}]}}
+        torrent:       {rule: Host(`torrent.thenewmans.casa`),       entryPoints: [websecure], service: vm-torrent,       tls: {certificates: [{certFile: /certs/tls.crt, keyFile: /certs/tls.key}]}}
+        search:        {rule: Host(`search.thenewmans.casa`),        entryPoints: [websecure], service: vm-search,        tls: {certificates: [{certFile: /certs/tls.crt, keyFile: /certs/tls.key}]}}
+        minecraft:     {rule: Host(`minecraft.thenewmans.casa`),     entryPoints: [websecure], service: vm-minecraft,     tls: {certificates: [{certFile: /certs/tls.crt, keyFile: /certs/tls.key}]}}
         # perplexica + nostalgiatv + jellyfin live in IngressRoutes (vm-resident-routes.yaml):
         # file-provider routes can't reference the authelia CRD middleware
       services:
