@@ -74,16 +74,16 @@ http:
   services:
     k8s-edge:
       # All three control-plane nodes carry hostPort 443 (newman.media/ingress
-      # label on every node, 3-replica Traefik). Health check fails a node out
-      # in ~5s if its edge freezes (2026-09-26 incident class: recovery IO
-      # starved a guest while it kept accepting TCP).
+      # label on every node, 3-replica Traefik).
+      #
+      # NOTE: healthCheck blocks were removed 2026-09-26. Traefik v3.7 health
+      # checks never marked these nodes healthy (status as int only, and checks
+      # did not honor insecureSkipVerify on the IP-vs-LE-cert backend), which
+      # 503'd every k8s-backed vhost within one check interval. If dead-node
+      # ejection is wanted again, upgrade Traefik first and re-verify with one
+      # node's edge stopped before trusting it cluster-wide.
       loadBalancer:
         serversTransport: k8s-edge-transport
-        healthCheck:
-          path: /
-          status: "200-499" # a frozen-host 404-free node answers anything alive
-          interval: 5s
-          timeout: 3s
         servers:
           - {url: "https://192.168.0.19:443"}
           - {url: "https://192.168.0.20:443"}
@@ -91,11 +91,6 @@ http:
     k8s-authelia:
       # NodePort is cluster-wide — every node IP serves it.
       loadBalancer:
-        healthCheck:
-          path: /
-          status: "200-499"
-          interval: 5s
-          timeout: 3s
         servers:
           - {url: "http://192.168.0.19:30991"}
           - {url: "http://192.168.0.20:30991"}

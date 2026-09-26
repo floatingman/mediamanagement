@@ -28,10 +28,10 @@ data:
           # verification would fail. LAN-only hop.
           insecureSkipVerify: true
       routers:
-        rancher:       {rule: Host(`rancher.thenewmans.casa`),       entryPoints: [websecure], service: vm-rancher,       tls: {certificates: [{certFile: /certs/tls.crt, keyFile: /certs/tls.key}]}}
-        torrent:       {rule: Host(`torrent.thenewmans.casa`),       entryPoints: [websecure], service: vm-torrent,       tls: {certificates: [{certFile: /certs/tls.crt, keyFile: /certs/tls.key}]}}
-        search:        {rule: Host(`search.thenewmans.casa`),        entryPoints: [websecure], service: vm-search,        tls: {certificates: [{certFile: /certs/tls.crt, keyFile: /certs/tls.key}]}}
-        minecraft:     {rule: Host(`minecraft.thenewmans.casa`),     entryPoints: [websecure], service: vm-minecraft,     tls: {certificates: [{certFile: /certs/tls.crt, keyFile: /certs/tls.key}]}}
+        rancher:       {rule: Host(`rancher.thenewmans.casa`),       entryPoints: [websecure], service: vm-rancher,       tls: {}}
+        torrent:       {rule: Host(`torrent.thenewmans.casa`),       entryPoints: [websecure], service: vm-torrent,       tls: {}}
+        search:        {rule: Host(`search.thenewmans.casa`),        entryPoints: [websecure], service: vm-search,        tls: {}}
+        minecraft:     {rule: Host(`minecraft.thenewmans.casa`),     entryPoints: [websecure], service: vm-minecraft,     tls: {}}
         # perplexica + nostalgiatv + jellyfin live in IngressRoutes (vm-resident-routes.yaml):
         # file-provider routes can't reference the authelia CRD middleware
       services:
@@ -40,3 +40,14 @@ data:
         vm-search:         {loadBalancer: {servers: [{url: "http://192.168.0.9:8082"}]}}
         vm-perplexica:     {loadBalancer: {servers: [{url: "http://192.168.0.9:3002"}]}}
         vm-minecraft:      {loadBalancer: {servers: [{url: "http://192.168.0.9:23333"}]}}
+    tls:
+      stores:
+        default:
+          # v3 dropped per-router tls.certificates (file provider) — the
+          # wildcard (cert-manager /certs mount) is the default store cert
+          # instead; a per-router "certificates" field makes this whole file
+          # fail to load ("field not found, node: certificates") and 404s
+          # every VM-resident host.
+          defaultCertificate:
+            certFile: /certs/tls.crt
+            keyFile: /certs/tls.key

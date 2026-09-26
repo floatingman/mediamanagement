@@ -12,7 +12,9 @@ Everything here assumes the layout documented in this repo's `CLAUDE.md`
 ```
                         *.thenewmans.casa (wildcard DNS -> same public IP)
                                       |
-              router port-forwards: 80/443 -> ingress node
+              router port-forwards: 80/443 -> edge VIP 192.168.0.23 (keepalived
+                                   VRRP on all 3 nodes; floats to a healthy
+                                   edge if the current holder fails)
                                    32400/tcp -> Docker VM (Plex, unchanged)
                                       |
         +---------------------------+----------------------------+
@@ -301,6 +303,23 @@ docker compose stop proxy          # frees 80/443 on the VM
 Then on the router: port-forwards `80/tcp` and `443/tcp`
 `192.168.0.9 -> <ingress-node-ip>`. Leave `32400/tcp -> 192.168.0.9` (Plex).
 Public IP is unchanged, so cloudflare-ddns needs nothing.
+
+**9c-VIP (added 2026-09-26): floating edge VIP.** The router forwards
+80/443 to the **edge VIP `192.168.0.23`**, not to a node IP. keepalived
+(unicast VRRP, vr_id 51) runs on all three control-plane nodes with
+priorities 150/100/50 (media-k8s-1/2/3) and a health script
+(`/usr/local/bin/edge-health.sh`: local traefik must answer any HTTP code
+within 3s). If the current VIP holder's edge stops responding, the VIP
+floats to the next node in seconds; highest priority preempts back on
+recovery. First-time setup after rebuilding a node: `apt install
+keepalived`, restore `/etc/keepalived/keepalived.conf` +
+`/usr/local/bin/edge-health.sh` from this section, adjust
+`unicast_src_ip`/`priority`, `systemctl enable --now keepalived`. DHCP note: the router's DHCP pool
+starts at 192.168.0.50, so the VIP at .23 is outside the pool and cannot
+be handed out — no exclusion possible or needed (ASUS ZenWiFi); just never
+manually assign .23 to another device. Verified 2026-09-26: stopping
+keepalived on the master moved the VIP to media-k8s-2 and search stayed
+200 through the VIP; master preemption restored it.
 
 **9d. Verify** — each should answer with its real UI:
 
