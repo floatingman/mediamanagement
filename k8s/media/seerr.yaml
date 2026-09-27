@@ -40,7 +40,7 @@ kind: PersistentVolumeClaim
 metadata: {name: seerr-config}
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
+  storageClassName: longhorn # migrated 2026-09-26
   resources: {requests: {storage: 2Gi}}
 ---
 apiVersion: v1

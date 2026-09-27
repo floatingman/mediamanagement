@@ -51,7 +51,7 @@ grafana:
   adminUser: admin
   persistence:
     enabled: true
-    storageClassName: local-path
+    storageClassName: longhorn # live PVC migrated from local-path 2026-09-26
     size: 5Gi
   resources:
     requests: {cpu: 50m, memory: 192Mi}

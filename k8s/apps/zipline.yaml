@@ -121,7 +121,7 @@ metadata:
   name: zipline-pgdata
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
+  storageClassName: longhorn # migrated 2026-09-26
   resources:
     requests:
       storage: 2Gi
@@ -132,7 +132,7 @@ metadata:
   name: zipline-data
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
+  storageClassName: longhorn # migrated 2026-09-26
   resources:
     requests:
       storage: 5Gi

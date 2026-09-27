@@ -42,7 +42,7 @@ spec:
         - name: pm
           persistentVolumeClaim: {claimName: nfs-perceptormedia}
         - name: rm
-          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
         - name: syndl
           persistentVolumeClaim: {claimName: nfs-synology-downloads}
         - name: usb
@@ -53,8 +53,8 @@ kind: PersistentVolumeClaim
 metadata: {name: radarr-config}
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
-  resources: {requests: {storage: 5Gi}}
+  storageClassName: longhorn # migrated from local-path 2026-09-26; real data 14.3G exceeded the old 5Gi request
+  resources: {requests: {storage: 20G}}
 ---
 apiVersion: v1
 kind: Service

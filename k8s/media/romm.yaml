@@ -98,7 +98,7 @@ kind: PersistentVolumeClaim
 metadata: {name: romm-db-data}
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
+  storageClassName: longhorn # migrated from local-path 2026-09-26
   resources: {requests: {storage: 2Gi}}
 ---
 apiVersion: v1
@@ -106,7 +106,7 @@ kind: PersistentVolumeClaim
 metadata: {name: romm-data}
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
+  storageClassName: longhorn # migrated from local-path 2026-09-26
   resources: {requests: {storage: 40Gi}} # 28G of scraped resources + growth
 ---
 apiVersion: v1

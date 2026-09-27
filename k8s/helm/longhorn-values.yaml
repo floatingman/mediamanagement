@@ -1,0 +1,27 @@
+# Longhorn replicated block storage (2026-09-26, Phase 2 hardening).
+#
+# WHY: local-path PVCs pin every workload to its node — a dead node strands
+# its services until the node returns (2026-09-25/26 incident: 90-minute
+# outages). Longhorn replicates volumes at block level across nodes, so
+# pods reschedule in ~1 minute on node loss, and block replication is
+# SQLite-safe (unlike NFS — see the 2026-09-16 torn-write incident).
+#
+# DISKS: each node contributes /dev/sdb (200G, formatted ext4, mounted
+# /var/lib/longhorn, fstab entry added 2026-09-26).
+# REPLICAS: 2 per volume across 3 nodes — tolerates one node loss without
+# data loss or rebuild stall; 3 replicas was rejected as IO overkill here.
+# EXCEPTIONS: sabnzbd-incomplete stays on local-path BY DESIGN (its
+# __ADMIN__ state must not ride shared storage — 2026-09-16 incident).
+#
+# MIGRATION: local-path config PVCs move one service at a time via
+# k8s/scripts/migrate-pvc.sh.
+defaultSettings:
+  defaultReplicaCount: 2
+persistence:
+  defaultClass: true # new PVCs default to longhorn; existing manifests pin local-path explicitly
+  defaultClassReplicaCount: 2
+  reclaimPolicy: Delete
+# UI stays ClusterIP-only (hardening): kubectl -n longhorn-system port-forward svc/longhorn-frontend 8080:80
+service:
+  ui:
+    type: ClusterIP

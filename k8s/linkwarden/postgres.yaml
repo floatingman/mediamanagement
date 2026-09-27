@@ -54,7 +54,7 @@ metadata:
   name: linkwarden-pgdata
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path # k3s default; adjust to your cluster's class
+  storageClassName: longhorn # migrated 2026-09-26 # k3s default; adjust to your cluster's class
   resources:
     requests:
       storage: 2Gi

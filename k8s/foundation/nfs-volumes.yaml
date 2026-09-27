@@ -12,27 +12,10 @@
 # mounts ever fail with "access denied by server while mounting", re-check
 # the exports (Unraid: Shares -> NFS; Synology: Control Panel -> File
 # Services -> NFS) — that's the only thing that error means.
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: nfs-ratchetmedia # Unraid: movies/TV/downloads staging
-spec:
-  capacity:
-    storage: 40Ti # advisory — static PVs are not quota'd
-  accessModes: [ReadWriteMany]
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: "" # static: never dynamically re-provisioned
-  claimRef:
-    name: nfs-ratchetmedia
-    namespace: media
-  mountOptions: [vers=3, hard, noatime, rsize=1048576, wsize=1048576, timeo=100, retrans=3]
-  csi:
-    driver: nfs.csi.k8s.io
-    volumeHandle: 192.168.0.5-mnt-user-Media
-    volumeAttributes:
-      server: 192.168.0.5
-      share: /mnt/user/Media
----
+# NOTE 2026-09-26: the nfs-ratchetmedia PV (Unraid /mnt/user/Media) was
+# REMOVED — Ratchet's media trees moved to the Synology USB share
+# (nfs-usbdrive below) during the bigmama→XFS rebuild; the Unraid share and
+# its NFS export were retired with it.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

@@ -108,7 +108,7 @@ spec:
         - name: tun
           hostPath: {path: /dev/net/tun, type: CharDevice}
         - name: rm
-          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
         - name: syndl
           persistentVolumeClaim: {claimName: nfs-synology-downloads}
         - name: usb
@@ -146,5 +146,13 @@ kind: PersistentVolumeClaim
 metadata: {name: torrent-config}
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
+  storageClassName: longhorn # migrated from local-path 2026-09-26
   resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: gluetun-config}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn # migrated from local-path 2026-09-26; PVC was previously out-of-band, declared here at cutover
+  resources: {requests: {storage: 1Gi}}

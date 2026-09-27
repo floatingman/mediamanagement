@@ -22,7 +22,7 @@ spec:
               The probe pod cannot complete I/O against {{ $labels.share }}.
               If the NAS had an array stop/start, the k8s CSI mounts will not
               self-heal — see TROUBLESHOOTING.md §3 (rollout restart the
-              nfs-ratchetmedia consumers).
+              nfs-usbdrive consumers).
         - alert: NFSProbeSilent
           expr: time() - nfs_probe_timestamp_seconds > 900
           labels: {severity: warning}
@@ -71,7 +71,9 @@ spec:
         #   nfs-perceptormediaexpansion → Synology volume3 — same df as the
         #                                  nfs-backups and nfs-synology-downloads
         #                                  exports; do NOT add those (triple dupes)
-        #   nfs-ratchetmedia            → Unraid /mnt/user/Media
+        #   nfs-ratchetmedia            → RETIRED 2026-09-26: Ratchet's media
+        #                                  trees moved to the Synology USB
+        #                                  share (nfs-usbdrive); share rebuilt
         #   nfs-usbdrive                → Synology /volumeUSB1 (external USB
         #                                  disk — its own physical volume, NOT
         #                                  volume1/volume3 df)
@@ -82,7 +84,7 @@ spec:
             max by (namespace, persistentvolumeclaim) (
               kubelet_volume_stats_available_bytes{
                 job="kubelet", namespace="media",
-                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia|nfs-synology-downloads|nfs-backups|nfs-usbdrive"
+                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-synology-downloads|nfs-backups|nfs-usbdrive"
               }
             ) < 1024 * 1024 * 1024 * 1024
           for: 30m
@@ -99,7 +101,7 @@ spec:
             max by (namespace, persistentvolumeclaim) (
               kubelet_volume_stats_available_bytes{
                 job="kubelet", namespace="media",
-                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-ratchetmedia|nfs-synology-downloads|nfs-backups|nfs-usbdrive"
+                persistentvolumeclaim=~"nfs-perceptormedia|nfs-perceptormediaexpansion|nfs-synology-downloads|nfs-backups|nfs-usbdrive"
               }
             ) < 256 * 1024 * 1024 * 1024
           for: 10m

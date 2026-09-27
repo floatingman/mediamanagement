@@ -8,8 +8,9 @@
 # each run REPLACES the previous metrics — staleness is detected via the
 # timestamp age, not accumulation).
 #
-#   ratchetmedia    : write + read-back in Downloads (also catches torn
-#                     writes; write perms are proven OK there)
+#   ratchetmedia    : (now usbdrive) — Ratchet's media trees moved to the
+#                     Synology USB share 2026-09-26; the probe follows the
+#                     data. Write + read-back.
 #   perceptormedia  : read-only stat (write perms not guaranteed on library
 #                     shares; ESTALE fails lookups just the same)
 #   usbdrive        : write + read-back (write perms proven on the USB share,
@@ -65,7 +66,7 @@ spec:
                 - {name: usb, mountPath: /usb}
           volumes:
             - name: rm
-              persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+              persistentVolumeClaim: {claimName: nfs-usbdrive}
             - name: pm
               persistentVolumeClaim: {claimName: nfs-perceptormedia}
             - name: usb

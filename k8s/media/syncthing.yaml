@@ -56,7 +56,7 @@ spec:
         - name: config
           persistentVolumeClaim: {claimName: syncthing-config}
         - name: rm
-          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
         - name: usb
           persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
@@ -65,7 +65,7 @@ kind: PersistentVolumeClaim
 metadata: {name: syncthing-config}
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
+  storageClassName: longhorn # migrated 2026-09-26
   resources: {requests: {storage: 2Gi}}
 ---
 apiVersion: v1

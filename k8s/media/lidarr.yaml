@@ -48,8 +48,8 @@ kind: PersistentVolumeClaim
 metadata: {name: lidarr-config}
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
-  resources: {requests: {storage: 12Gi}} # 4.5G db + headroom
+  storageClassName: longhorn # migrated from local-path 2026-09-26; real data 26G exceeded the old 12Gi request
+  resources: {requests: {storage: 40Gi}} # 4.5G db + headroom
 ---
 apiVersion: v1
 kind: Service

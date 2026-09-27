@@ -13,19 +13,6 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nfs-ratchetmedia
-  labels: {excluded_from_alerts: "true"}
-spec:
-  accessModes: [ReadWriteMany]
-  storageClassName: ""
-  volumeName: nfs-ratchetmedia
-  resources:
-    requests:
-      storage: 40Ti # must be <= PV capacity (advisory)
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
   name: nfs-perceptormedia
   labels: {excluded_from_alerts: "true"}
 spec:

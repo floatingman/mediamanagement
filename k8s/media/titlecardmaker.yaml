@@ -38,7 +38,7 @@ spec:
         - name: pm
           persistentVolumeClaim: {claimName: nfs-perceptormedia}
         - name: rm
-          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
         - name: usb
           persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---
@@ -47,8 +47,8 @@ kind: PersistentVolumeClaim
 metadata: {name: titlecardmaker-config}
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
-  resources: {requests: {storage: 60Gi}}
+  storageClassName: longhorn # migrated from local-path 2026-09-26; size right-sized to actual data (expand online as needed)
+  resources: {requests: {storage: 40Gi}}
 ---
 apiVersion: v1
 kind: Service

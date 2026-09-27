@@ -57,7 +57,7 @@ metadata:
   name: linkwarden-data
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
+  storageClassName: longhorn # migrated 2026-09-26
   resources:
     requests:
       storage: 20Gi # 12G used today

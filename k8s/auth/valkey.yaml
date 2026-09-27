@@ -45,7 +45,7 @@ metadata:
   name: authelia-valkey
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: local-path
+  storageClassName: longhorn # migrated 2026-09-26
   resources:
     requests:
       storage: 1Gi
