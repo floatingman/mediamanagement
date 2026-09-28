@@ -38,7 +38,7 @@ spec:
         - name: pm
           persistentVolumeClaim: {claimName: nfs-perceptormedia}
         - name: rm
-          persistentVolumeClaim: {claimName: nfs-usbdrive}
+          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
         - name: usb
           persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---

@@ -56,7 +56,7 @@ spec:
         - name: config
           persistentVolumeClaim: {claimName: syncthing-config}
         - name: rm
-          persistentVolumeClaim: {claimName: nfs-usbdrive}
+          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
         - name: usb
           persistentVolumeClaim: {claimName: nfs-usbdrive}
 ---

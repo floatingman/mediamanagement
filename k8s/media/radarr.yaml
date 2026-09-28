@@ -42,7 +42,7 @@ spec:
         - name: pm
           persistentVolumeClaim: {claimName: nfs-perceptormedia}
         - name: rm
-          persistentVolumeClaim: {claimName: nfs-usbdrive}
+          persistentVolumeClaim: {claimName: nfs-ratchetmedia}
         - name: syndl
           persistentVolumeClaim: {claimName: nfs-synology-downloads}
         - name: usb

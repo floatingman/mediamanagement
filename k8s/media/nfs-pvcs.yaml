@@ -10,6 +10,20 @@
 # NfsVolumeCriticallyFull <256GiB crit) live in
 # k8s/monitoring/media-alerts.yaml. Requires the kube-state-metrics
 # metricLabelsAllowlist in k8s/helm/kube-prometheus-stack-values.yaml.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-ratchetmedia
+  labels: {excluded_from_alerts: "true"}
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: nfs-ratchetmedia
+  resources:
+    requests:
+      storage: 40Ti
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
