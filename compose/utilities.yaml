@@ -29,3 +29,16 @@ services:
     volumes:
       - ../appdata/searxng/valkey:/data
     restart: unless-stopped
+
+  # OpenAI-shape proxy for the Cline API (api.cline.bot): Cline wraps every
+  # completion in {"data": ..., "success": ...}, which litellm/cognee cannot
+  # parse. Stdlib-only script; forwards auth verbatim. Port 8123.
+  cline-gateway:
+    image: python:3.12-slim
+    container_name: cline-gateway
+    command: python /gateway/cline-gateway.py
+    volumes:
+      - ../scripts/cline-gateway.py:/gateway/cline-gateway.py:ro
+    ports:
+      - "8123:8123"
+    restart: unless-stopped

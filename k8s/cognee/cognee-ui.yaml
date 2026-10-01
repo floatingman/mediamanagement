@@ -1,0 +1,79 @@
+# cognee-ui — Next.js frontend. The browser talks to the backend DIRECTLY at
+# COGNEE_BACKEND_URL (the server renders it into the page as runtime config),
+# so that origin must be browser-reachable: cognee-api.thenewmans.casa.
+# Backend auth is cognee's own (login page → JWT), hence no Authelia middleware
+# on either route — same open-at-edge posture as searxng.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cognee-ui
+  labels:
+    app: cognee-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cognee-ui
+  template:
+    metadata:
+      labels:
+        app: cognee-ui
+    spec:
+      containers:
+        - name: cognee-ui
+          image: cognee/cognee-ui:1.6.2
+          ports:
+            - containerPort: 3000
+          env:
+            - name: COGNEE_BACKEND_URL
+              value: https://cognee-api.thenewmans.casa
+            - name: DEFAULT_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: DEFAULT_USER_PASSWORD
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/runtime-config
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /api/runtime-config
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cognee-ui
+spec:
+  selector:
+    app: cognee-ui
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cognee-ui
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`cognee.thenewmans.casa`)
+      kind: Rule
+      services:
+        - name: cognee-ui
+          port: 3000
+  tls:
+    secretName: thenewmans-certs

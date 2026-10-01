@@ -168,3 +168,21 @@ Do not record transient tool failures or unverified guesses.
 **Root cause:** Every verify/test layer was asserted against what the code SHOULD do, never executed against what the actual busybox build does; and the edit-while-running hazard of incrementally-read bash scripts was ignored.
 **Prevention:** (a) Execute a migration script's verify snippet against a real populated directory in the real target image BEFORE the first real run; (b) verify regular-file CONTENT bytes only — tar-stream `tar -cf - | wc -c` is exact, deterministic and ARG_MAX-immune (dir inodes are not); (c) never edit a bash script while any process is executing it — cancel, fix, relaunch.
 **Verification:** Final flow completed 30/30 PVC migrations to Longhorn with strict byte-exact stage→final verification on every volume (e.g. lidarr 26,392,250,880 bytes both copies).
+
+### [2026-09-30] `PUT N.:` replaces line N — used it three times where insert was intended
+**Mistake:** While editing gen-env.sh, cognee.yaml, and CLAUDE.md, issued `PUT N.:` with a body meant to be ADDED after line N; each call instead consumed line N (dropping `val=$(get "$key")`, `value: http`, the mcsmanager-daemon and jellyfin rows), caught only by reading each edit response.
+**Root cause:** `PUT N.:` is a REPLACE of line N; insertion after N is `PUT >N:`. Repeated for insert-after-single-line cases because the range form felt like the default.
+**Prevention:** Inserting → `PUT >N`; replacing → `PUT N.=M`. After every edit, diff the response listing against intent (count lines: body lines should equal range size for replaces, and no neighbor line should vanish).
+**Verification:** Subsequent edits in the session used `PUT >N` for inserts; re-reads confirmed no further dropped lines.
+
+### [2026-09-30] Misdiagnosed z.ai error 1113 as "no account balance"
+**Mistake:** Validating a z.ai key against https://api.z.ai/api/paas/v4 returned error 1113 "Insufficient balance or no resource package"; concluded the account needed a recharge and told the user to top up. User correction: the key is a Coding Plan key — the correct base URL is https://api.z.ai/api/coding/paas/v4, where the same key works immediately.
+**Root cause:** Treated a billing-shaped error as a billing problem without considering that the endpoint selects the plan; z.ai serves coding-subscription keys on a different path than pay-as-you-go keys.
+**Prevention:** For provider API errors on third-party endpoints, check the endpoint/key-type matrix (same provider often runs multiple plans on different base URLs) before recommending account actions. Ask which plan/product the key belongs to when auth passes but billing fails.
+**Verification:** Same key returned a 200 completion with glm-5.3-flash on the coding base URL; cognee flipped and PipelineRunCompleted through it.
+
+### [2026-10-01] Assumed paired upstream images carried the same library version
+**Mistake:** Pinned cognee's API and MCP containers to `cognee/cognee:1.6.2` and `cognee/cognee-mcp:main-ba3631f` believing "same-day build = same commit = same version". Hermes then hit "Relational DB Migrations failed" on every MCP write: the mcp image bundles cognee 1.5.4 from PyPI (its uv.lock pins the published wheel), while the api image builds the monorepo source (1.6.2-local) — the 1.5.4 migration chain cannot read the alembic head 1.6.2 stamped.
+**Root cause:** Verified image pairing by build DATE, not by the embedded library version. A monorepo's subproject images can lag the release tag by whole minor versions when their lockfile pins an external registry instead of the workspace source.
+**Prevention:** When two services must share a schema/migration state, verify the embedded library version in both images (`python -c "import pkg; print(pkg.__version__)"` via kubectl exec) before pairing tags. Alembic "Can't locate revision" across services = version skew, not a broken DB.
+**Verification:** Rebuilt the mcp image from the v1.6.2 tag with `uv lock --upgrade-package cognee` (→ PyPI 1.6.2), imported to all nodes; MCP remember/recall round-trip verified live.

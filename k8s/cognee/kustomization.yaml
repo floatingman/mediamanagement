@@ -1,0 +1,32 @@
+# cognee — LLM memory system (https://github.com/topoteretes/cognee).
+# API+MCP pod, dedicated pgvector Postgres, Next.js UI. Everything on one
+# Postgres (relational + pgvector + postgres_demo graph). LLM = glm-5.3-flash
+# via z.ai coding endpoint (.env COGNEE_LLM_API_KEY); embeddings stay local
+# via Ollama on the Docker VM (192.168.0.9:11434, nomic-embed-text required).
+#
+#   k8s/scripts/gen-env.sh   # writes env.txt AND users.txt (basic auth hash
+#                              for mcp.thenewmans.casa; see below)
+#   kubectl apply -k k8s/cognee
+#
+# Endpoints after deploy:
+#   https://cognee.thenewmans.casa        UI (login: default user, DEFAULT_USER_PASSWORD)
+#   https://cognee-api.thenewmans.casa    REST API (JWT auth; /docs for reference)
+#   https://mcp.thenewmans.casa/mcp     MCP server (basic auth: COGNEE_MCP_USER/PASSWORD)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cognee
+generatorOptions:
+  disableNameSuffixHash: true
+secretGenerator:
+  - name: cognee-env
+    envs:
+      - env.txt
+  - name: cognee-mcp-auth # traefik basicAuth reads the `users` key of this Secret
+    envs:
+      - users.txt
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - cognee.yaml
+  - cognee-ui.yaml
+  - certificate.yaml

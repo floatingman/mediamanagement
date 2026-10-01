@@ -1,0 +1,77 @@
+# cognee-db — pgvector-enabled Postgres 16 (dedicated instance; the existing
+# linkwarden-db/zipline-db run plain postgres:16-alpine without the pgvector
+# extension binaries cognee's all-on-Postgres mode requires).
+# Cognee issues CREATE EXTENSION IF NOT EXISTS vector itself on first boot.
+# Debian variant runs postgres as uid 999 and chowns PGDATA on start.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cognee-db
+  labels:
+    app: cognee-db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # RWO PVC — never allow two writers during rollout
+  selector:
+    matchLabels:
+      app: cognee-db
+  template:
+    metadata:
+      labels:
+        app: cognee-db
+    spec:
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:0.8.6-pg16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: cognee
+            - name: POSTGRES_DB
+              value: cognee_db
+          envFrom:
+            - secretRef:
+                name: cognee-env # uses POSTGRES_PASSWORD; extra keys ignored
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+              subPath: pgdata
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          livenessProbe:
+            exec:
+              command: [pg_isready, -U, cognee, -d, cognee_db]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: cognee-pgdata
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cognee-pgdata
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cognee-db
+spec:
+  selector:
+    app: cognee-db
+  ports:
+    - port: 5432
+      targetPort: 5432

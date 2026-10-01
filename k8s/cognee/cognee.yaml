@@ -1,0 +1,368 @@
+# cognee — REST API (container port 8000) + MCP server (HTTP_PORT=8001, TRANSPORT_MODE=http)
+# as two containers in ONE pod (shared netns — hence the port split): both mount
+# (dataset files + system state must be shared; postgres holds graph/vectors/relational).
+# The api container runs DB migrations on boot; mcp starts with --no-migration
+# to avoid racing it (same split as upstream's docker-compose).
+#
+# Storage posture (matches docs.cognee.ai/guides/store-configurations "One Postgres"):
+#   relational=postgres  vector=pgvector  graph=postgres_demo
+# LLM + embeddings come from Ollama on the Docker VM (GPU-bound, stays there —
+# cluster nodes have no NVIDIA GPUs); nomic-embed-text pulled 2026-09-30.
+#
+# Images are pinned: cognee is config-coupled (env schema moves between minors —
+# see the recyclarr lesson in MISTAKES.md). cognee-mcp publishes no semver tags;
+# main-ba3631f is the commit build matching cognee:1.6.2 (same 2026-09-29 build).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cognee
+  labels:
+    app: cognee
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # RWO PVC shared by both containers
+  selector:
+    matchLabels:
+      app: cognee
+  template:
+    metadata:
+      labels:
+        app: cognee
+    spec:
+      initContainers:
+        # Fresh Longhorn PVC is root-owned; the image runs as uid 1000 (cognee).
+        - name: chown-storage
+          image: busybox:1.36
+          command: ["sh", "-c", "chown -R 1000:1000 /cognee-storage"]
+          volumeMounts:
+            - name: storage
+              mountPath: /cognee-storage
+      containers:
+        - name: api
+          image: cognee/cognee:1.6.2
+          ports:
+            - name: api-http
+              containerPort: 8000
+          env:
+            - name: ENV
+              value: local
+            - name: LOG_LEVEL
+              value: INFO
+            - name: SYSTEM_ROOT_DIRECTORY
+              value: /cognee-storage/system
+            - name: DATA_ROOT_DIRECTORY
+              value: /cognee-storage/data
+            # All-on-Postgres
+            - name: DB_PROVIDER
+              value: postgres
+            - name: DB_HOST
+              value: cognee-db
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USERNAME
+              value: cognee
+            - name: DB_NAME
+              value: cognee_db
+            - name: VECTOR_DB_PROVIDER
+              value: pgvector
+            - name: VECTOR_DB_NAME
+              value: cognee_db
+            - name: VECTOR_DB_HOST
+              value: cognee-db
+            - name: VECTOR_DB_PORT
+              value: "5432"
+            - name: VECTOR_DB_USERNAME
+              value: cognee
+            - name: GRAPH_DATABASE_PROVIDER
+              value: postgres_demo
+            - name: GRAPH_DATABASE_NAME
+              value: cognee_db
+            - name: GRAPH_DATABASE_HOST
+              value: cognee-db
+            - name: GRAPH_DATABASE_PORT
+              value: "5432"
+            - name: GRAPH_DATABASE_USERNAME
+              value: cognee
+            # Multi-user mode (ENABLE_BACKEND_ACCESS_CONTROL=true) disables the
+            # DB_* fallback for the per-dataset vector/graph engines — they need
+            # their own explicit credentials (store-configurations doc).
+            - name: VECTOR_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: DB_PASSWORD
+            - name: GRAPH_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: DB_PASSWORD
+            # LLM via deepseek-v4.1-flash through the ClinePass subscription —
+            # proxied by cline-gateway on the Docker VM (:8123) because Cline
+            # wraps responses in {"data":...} (see scripts/cline-gateway.py).
+            # Key = .env CLINE_API_KEY via env.txt LLM_API_KEY.
+            - name: LLM_PROVIDER
+              value: openai
+            - name: LLM_MODEL
+              value: openai/deepseek/deepseek-v4.1-flash
+            - name: LLM_ENDPOINT
+              value: http://192.168.0.9:8123/v1
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: LLM_API_KEY
+            - name: LLM_TEMPERATURE
+              value: "0.0"
+            # Embeddings stay local via Ollama on the Docker VM
+            - name: EMBEDDING_PROVIDER
+              value: ollama
+            - name: EMBEDDING_MODEL
+              value: nomic-embed-text
+            - name: EMBEDDING_ENDPOINT
+              value: http://192.168.0.9:11434/api/embed
+            - name: EMBEDDING_DIMENSIONS
+              value: "768"
+            - name: HUGGINGFACE_TOKENIZER
+              value: nomic-ai/nomic-embed-text-v1.5
+            # Multi-user auth on (JWT login; single-user-off is local-only posture)
+            - name: ENABLE_BACKEND_ACCESS_CONTROL
+              value: "true"
+            - name: CORS_ALLOWED_ORIGINS
+              value: https://cognee.thenewmans.casa
+            - name: UI_APP_URL
+              value: https://cognee.thenewmans.casa
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: DB_PASSWORD
+            - name: DEFAULT_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: DEFAULT_USER_PASSWORD
+            - name: FASTAPI_USERS_RESET_PASSWORD_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: FASTAPI_USERS_RESET_PASSWORD_TOKEN_SECRET
+            - name: FASTAPI_USERS_VERIFICATION_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: FASTAPI_USERS_VERIFICATION_TOKEN_SECRET
+          volumeMounts:
+            - name: storage
+              mountPath: /cognee-storage
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api-http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api-http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 12
+        - name: mcp
+          # LOCAL BUILD — cognee-mcp v1.6.2 tag + uv.lock bumped to PyPI cognee 1.6.2
+          # (upstream mcp images pin 1.5.4 from PyPI even on the v1.6.2 tag, whose
+          # migrations can't read the 1.6.2 api's alembic head → "Relational DB
+          # Migrations failed" on every MCP write). Imported into all 3 nodes'
+          # containerd via ctr (tar kept at ~/mcp-fixed-cognee-mcp-1.6.2.tar.gz
+          # a node rebuilt from scratch needs a re-import before scheduling).
+          image: cognee/cognee-mcp:1.6.2-fixed
+          imagePullPolicy: IfNotPresent
+          args: ["--no-migration"]
+          ports:
+            - name: mcp-http
+              containerPort: 8001
+          env:
+            - name: TRANSPORT_MODE
+              value: http
+            - name: HTTP_PORT
+              value: "8001"
+            - name: MCP_ALLOWED_HOSTS
+              value: mcp.thenewmans.casa:*
+            - name: SYSTEM_ROOT_DIRECTORY
+              value: /cognee-storage/system
+            - name: DATA_ROOT_DIRECTORY
+              value: /cognee-storage/data
+            - name: DB_PROVIDER
+              value: postgres
+            - name: DB_HOST
+              value: cognee-db
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USERNAME
+              value: cognee
+            - name: DB_NAME
+              value: cognee_db
+            - name: VECTOR_DB_PROVIDER
+              value: pgvector
+            - name: VECTOR_DB_NAME
+              value: cognee_db
+            - name: VECTOR_DB_HOST
+              value: cognee-db
+            - name: VECTOR_DB_PORT
+              value: "5432"
+            - name: VECTOR_DB_USERNAME
+              value: cognee
+            - name: GRAPH_DATABASE_PROVIDER
+              value: postgres_demo
+            - name: GRAPH_DATABASE_NAME
+              value: cognee_db
+            - name: GRAPH_DATABASE_HOST
+              value: cognee-db
+            - name: GRAPH_DATABASE_PORT
+              value: "5432"
+            - name: GRAPH_DATABASE_USERNAME
+              value: cognee
+            # Multi-user mode needs explicit per-layer credentials (no DB_* fallback)
+            - name: VECTOR_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: DB_PASSWORD
+            - name: GRAPH_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: DB_PASSWORD
+            - name: LLM_PROVIDER
+              value: openai
+            - name: LLM_MODEL
+              value: openai/deepseek/deepseek-v4.1-flash
+            - name: LLM_ENDPOINT
+              value: http://192.168.0.9:8123/v1
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: LLM_API_KEY
+            - name: EMBEDDING_PROVIDER
+              value: ollama
+            - name: EMBEDDING_MODEL
+              value: nomic-embed-text
+            - name: EMBEDDING_ENDPOINT
+              value: http://192.168.0.9:11434/api/embed
+            - name: EMBEDDING_DIMENSIONS
+              value: "768"
+            - name: HUGGINGFACE_TOKENIZER
+              value: nomic-ai/nomic-embed-text-v1.5
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cognee-env
+                  key: DB_PASSWORD
+          volumeMounts:
+            - name: storage
+              mountPath: /cognee-storage
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: mcp-http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 10
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: cognee-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cognee-storage
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi # ingested source files + system state; graph/vectors live in Postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cognee
+spec:
+  selector:
+    app: cognee
+  ports:
+    - name: api
+      port: 8000
+      targetPort: api-http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cognee-mcp # cluster-internal only; not exposed at the edge yet
+spec:
+  selector:
+    app: cognee
+  ports:
+    - name: mcp
+      port: 8000
+      targetPort: mcp-http
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cognee-api
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`cognee-api.thenewmans.casa`)
+      kind: Rule
+      services:
+        - name: cognee
+          port: 8000
+  tls:
+    secretName: thenewmans-certs
+---
+# basicAuth users come from Secret/cognee-mcp-auth (`users` key, generated by
+# gen-env.sh from .env COGNEE_MCP_USER/COGNEE_MCP_PASSWORD) — the v3 CRD has
+# no inline users field.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: cognee-mcp-auth
+spec:
+  basicAuth:
+    secret: cognee-mcp-auth
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cognee-mcp
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`mcp.thenewmans.casa`)
+      kind: Rule
+      middlewares:
+        - name: cognee-mcp-auth
+      services:
+        - name: cognee-mcp
+          port: 8000
+  tls:
+    secretName: thenewmans-certs

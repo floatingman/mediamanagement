@@ -230,3 +230,4 @@ appdata/romm/hoist_manifest_*.tsv
 k8s/**/env.txt
 appdata/jellyfin/
 backups-duplicates-*.json
+k8s/cognee/users.txt
