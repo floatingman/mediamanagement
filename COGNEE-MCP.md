@@ -97,10 +97,33 @@ TOK=$(curl -s -X POST https://cognee-api.thenewmans.casa/api/v1/auth/login \
   --data-urlencode "password=<COGNEE_DEFAULT_USER_PASSWORD>" \
   | python3 -c "import json,sys;print(json.load(sys.stdin)['access_token'])")
 curl -H "Authorization: Bearer $TOK" .../api/v1/search ...
-```
+
+## Dataset routing convention (per-repo brains + shared global)
+
+Datasets are cognee's partition unit: each gets its own graph, entities can't
+collide across them, and `recall` accepts a comma-separated list. Convention:
+
+| Dataset | Contents | Who writes |
+|---|---|---|
+| `global` | Cross-cutting infra knowledge, incident history, homelab facts, learned lessons | any agent, for non-repo-specific knowledge |
+| `repo:<name>` | One git repo's architecture, docs, conventions (e.g. `repo:mediamanagement` = its CLAUDE.md) | agents working in that repo |
+
+- `remember` MUST pass `dataset_name` explicitly (default otherwise creates a
+  per-client `<clientname>_memory` dataset — fragmentation, not scoping).
+- `recall` with `datasets: "repo:<name>,global"` is the default scope inside a
+  repo; omit `datasets` for a broad cross-brain search when the source is unknown.
+- `forget(dataset: "repo:<name>")` purges a repo's brain when it's archived or
+  rewritten.
+- New repo = nothing infra-side to add: the dataset is created lazily by the
+  first `remember`/`add`. Onboarding = ingest its README/CLAUDE.md/docs into
+  `repo:<name>` and re-call cognify, then agents follow the routing above.
+- **Work-repo caution**: ingestion extraction runs through the configured LLM
+  backend (currently ClinePass/deepseek — a third-party cloud). Do not route
+  employer-confidential code/docs through it unless that's permitted; a
+  separate work-only cognee instance with a local Ollama backend is the
+  isolation option if needed.
 
 ## 3. Post-wire verification
-
 Ask the agent to recall a known fact (memory already contains TROUBLESHOOTING.md):
 
 > Call mcp_cognee_recall with query "Where does Sabnzbd download usenet to?" — expect "the Synology NAS".
