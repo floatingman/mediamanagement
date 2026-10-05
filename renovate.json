@@ -6,6 +6,8 @@
   "prConcurrentLimit": 5,
   "labels": ["dependencies"],
   "reviewers": ["floatingman"],
+  "automerge": true,
+  "platformAutomerge": true,
   "kubernetes": {
     "enabled": true,
     "managerFilePatterns": [
