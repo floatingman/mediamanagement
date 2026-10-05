@@ -99,11 +99,21 @@ else
     say "  traefik (edge — brief hostPort swap)"
     helm upgrade traefik traefik/traefik -n traefik \
         -f "$REPO/k8s/helm/traefik-values.yaml" >/dev/null
-    # hostPort deadlock: the new pod stays Pending while the old holds 80/443.
-    # Wait briefly; if stuck, delete the running pod to cut over.
+    # hostPort deadlock: with 3 replicas pinned one-per-node, the new pods
+    # can't schedule while old-RS pods hold the ports — and the deployment
+    # controller may RESPAWN an old-RS pod into any slot the script frees
+    # (seen live 2026-10-04: delete-one-pod heal churned forever). The
+    # deterministic fix: scale every old replicaset to 0, then wait.
     if ! kubectl -n traefik rollout status deploy/traefik --timeout=90s >/dev/null 2>&1; then
-        OLD=$(kubectl -n traefik get pods --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
-        [[ -n $OLD ]] && { say "  hostPort deadlock — deleting old pod $OLD"; kubectl -n traefik delete pod "$OLD" >/dev/null; }
+        say "  hostPort deadlock — scaling old replicasets to 0"
+        DEPREV=$(kubectl -n traefik get deploy traefik -o jsonpath='{.metadata.annotations.deployment\.kubernetes\.io/revision}')
+        while read -r pair; do
+            [[ -z $pair ]] && continue
+            rs=${pair%%=*}; rev=${pair##*=}
+            [[ $rev == "$DEPREV" ]] && continue # current RS — keep
+            say "    rs/$rs -> 0"
+            kubectl -n traefik scale "rs/$rs" --replicas=0 >/dev/null
+        done < <(kubectl -n traefik get rs -o jsonpath='{range .items[*]}{.metadata.name}={.metadata.annotations.deployment\.kubernetes\.io/revision}{"\n"}{end}')
         kubectl -n traefik rollout status deploy/traefik --timeout=180s >/dev/null
     fi
 fi
