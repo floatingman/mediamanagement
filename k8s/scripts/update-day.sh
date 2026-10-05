@@ -1,31 +1,48 @@
 #!/usr/bin/env bash
-# update-day.sh — the monthly/monthly-ish image + chart refresh.
-#
 # The :latest fleet (imagePullPolicy: Always) picks up new images via
 # rollout restarts; helm releases are upgraded with the repo's values.
 # Pinned images (recyclarr, meilisearch...) update via Renovate PRs —
-# merge them, then run this script to apply.
+# merge them, then run this script to apply. The Docker VM compose fleet
+# (plex, ollama, jellyfin, searxng, perplexica, nostalgiatv, mcsmanager,
+# torrent/gluetun, cline-gateway) is pulled and recreated in the same run —
+# only containers whose image digest changed get recreated. NB: a changed
+# mcsmanager-daemon image restarts the Minecraft daemons.
 #
 # Safety built in:
 #   1. Cluster reachable before anything else
 #   2. radarr restarts FIRST as a canary (DB migrations are the risk) —
 #      waits for readiness, greps its logs for errors, aborts if unhealthy
-#   3. torrent is excluded (rolled back to the VM; do not resurrect)
+#   3. torrent is excluded from k8s restarts (rolled back to the VM; do not resurrect)
 #   4. Every rollout is waited on; failures abort the run
 #   5. traefik upgrade handles the hostPort deadlock (deletes the old pod)
-#   6. Final sweep: CrashLoop/OOM pods listed + edge spot-check
+#   6. Docker VM: pull + up -d from the repo root (project name!), then
+#      a health sweep; only digest-changed containers recreate
+#   7. Final sweep: CrashLoop/OOM pods listed + edge spot-check
 #
 # Usage:
-#   k8s/scripts/update-day.sh             # full run
-#   k8s/scripts/update-day.sh --skip-helm # deployments only
+#   k8s/scripts/update-day.sh             # full run (cluster + VM)
+#   k8s/scripts/update-day.sh --skip-helm # deployments + VM, no chart upgrades
+#   k8s/scripts/update-day.sh --docker-only  # just the Docker VM fleet
 set -euo pipefail
 
 REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-SKIP_HELM=0
-[[ ${1:-} == "--skip-helm" ]] && SKIP_HELM=1
+SKIP_HELM=0 SKIP_DOCKER=0 DOCKER_ONLY=0
+for a in "$@"; do
+    case $a in
+        --skip-helm)   SKIP_HELM=1 ;;
+        --skip-docker) SKIP_DOCKER=1 ;;
+        --docker-only) DOCKER_ONLY=1 ;;
+        *) echo "unknown flag: $a" >&2; exit 2 ;;
+    esac
+done
 
 say() { echo ">>> $*"; }
 fail() { echo ">>> ABORT: $*" >&2; exit 1; }
+
+if [[ $DOCKER_ONLY -eq 1 ]]; then
+    say "--docker-only: skipping cluster sections (canary/rollouts/helm)"
+fi
+if [[ $DOCKER_ONLY -eq 0 ]]; then
 
 # --- 0. Preflight ------------------------------------------------------------
 kubectl get nodes >/dev/null 2>&1 || fail "cluster unreachable"
@@ -90,8 +107,37 @@ else
         kubectl -n traefik rollout status deploy/traefik --timeout=180s >/dev/null
     fi
 fi
+fi # end cluster sections
 
-# --- 4. Final sweep --------------------------------------------------------------
+# --- 4. Docker VM (compose fleet) ------------------------------------------------
+# MUST run from the repo root: the project name comes from the root
+# docker-compose.yaml include; per-file -f invocations create a foreign
+# project and collide (2026-09-21 lesson).
+if [[ $SKIP_DOCKER -eq 1 ]]; then
+    say "--skip-docker: skipping the Docker VM fleet"
+elif ! command -v docker >/dev/null 2>&1; then
+    say "docker CLI not present — skipping the Docker VM fleet"
+else
+    say "docker compose pull (VM fleet: plex, ollama, jellyfin, searxng, perplexica, nostalgiatv, mcsmanager, torrent/gluetun, cline-gateway)..."
+    (cd "$REPO" && docker compose pull --quiet) || fail "docker compose pull failed"
+
+    say "docker compose up -d (recreates only digest-changed containers)..."
+    (cd "$REPO" && docker compose up -d --remove-orphans) || fail "docker compose up failed"
+
+    say "waiting 25s for containers to settle..."
+    sleep 25
+
+    BAD=$(cd "$REPO" && docker compose ps --all --format '{{.Name}}\t{{.State}}\t{{.Health}}' 2>/dev/null \
+        | awk -F'\t' '$2 != "running" || ($3 != "" && $3 != "healthy" && $3 != "-")' | head -10 || true)
+    if [[ -n $BAD ]]; then
+        echo "$BAD" | sed 's/^/    /'
+        fail "VM containers not running/healthy after up -d — inspect: docker compose ps"
+    fi
+    say "VM fleet healthy ($(cd "$REPO" && docker compose ps -q | wc -l) containers running)"
+fi
+
+
+# --- 5. Final sweep --------------------------------------------------------------
 say "post-update sweep..."
 BAD=$(kubectl get pods -A --no-headers 2>/dev/null | grep -vE 'Running|Completed|Succeeded' | grep -vE 'torrent' | head -10 || true)
 if [[ -n $BAD ]]; then
@@ -106,5 +152,5 @@ say "edge spot-check (auth via 192.168.0.19): HTTP $EDGE"
 
 say "update day complete. Reminders:"
 echo "    - Rancher VM charts: KUBECONFIG=~/.kube/rancher-vm helm upgrade rancher rancher-latest/rancher -n cattle-system --version <new> -f k8s/helm/rancher-values.yaml"
-echo "    - Renovate PRs merged since last run are now live; check the *arr UIs."
-echo "    - torrent/gluetun live on the VM: docker compose pull vpn torrent && docker compose up -d vpn torrent"
+echo "    - Renovate PRs merged since last run are now live; check the *arr UIs (recyclarr: run the manual job)."
+echo "    - romm runs :latest — confirm its UI loads after any recreation (config-coupled)."
