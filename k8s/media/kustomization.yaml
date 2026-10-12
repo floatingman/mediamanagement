@@ -44,4 +44,6 @@ resources:
   - romm.yaml
   - calibre-web.yaml
   - syncthing.yaml
+  - chaptarr.yaml
+  - tasterr.yaml
   - certificate.yaml

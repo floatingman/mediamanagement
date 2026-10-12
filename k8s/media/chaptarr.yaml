@@ -1,0 +1,83 @@
+# chaptarr — Readarr fork managing audiobooks + eBooks in one instance
+# (https://github.com/Chaptarr/chaptarr). *arr-family layout: shares the SAME
+# library volumes as the consumers — /audiobooks is audiobookshelf's library
+# (expansion share Audio/audiobooks), /ebooks is calibre-web's (Backups share
+# Books/), /downloads the Synology staging PV. Tag PINNED: beta app, every
+# release can carry a SQLite migration (renovate: no automerge until stable).
+# enableServiceLinks off: .NET reads Chaptarr__* config env; injected
+# CHAPTARR_SERVICE_* becomes junk config keys (harmless but noise — see
+# MISTAKES.md 2026-09-15 / 2026-10-07 service-link entries).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaptarr
+  namespace: media
+  labels: {app: chaptarr}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: chaptarr}}
+  template:
+    metadata:
+      labels: {app: chaptarr}
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: chaptarr
+          image: chaptarr/chaptarr:0.9.965
+          ports: [{containerPort: 8789}]
+          env:
+            - {name: PUID, value: "1000"}
+            - {name: PGID, value: "1003"}
+            - {name: TZ, value: America/Chicago}
+            - {name: UMASK, value: "002"} # group-writable (share model: group users rw)
+          volumeMounts:
+            - {name: config, mountPath: /config}
+            - {name: pme, mountPath: /audiobooks, subPath: Audio/audiobooks}
+            - {name: bk, mountPath: /ebooks, subPath: Books}
+            - {name: syndl, mountPath: /downloads}
+            - {name: usb, mountPath: /usbdrive}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {memory: 2Gi} # m4b-tool/ffmpeg conversions stream; raise if bulk M4B jobs OOM
+          readinessProbe:
+            tcpSocket: {port: 8789}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: chaptarr-config}
+        - name: pme
+          persistentVolumeClaim: {claimName: nfs-perceptormediaexpansion}
+        - name: bk
+          persistentVolumeClaim: {claimName: nfs-backups}
+        - name: syndl
+          persistentVolumeClaim: {claimName: nfs-synology-downloads}
+        - name: usb
+          persistentVolumeClaim: {claimName: nfs-usbdrive}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: chaptarr-config, namespace: media}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: chaptarr, namespace: media}
+spec:
+  selector: {app: chaptarr}
+  ports: [{port: 8789, targetPort: 8789}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: chaptarr, namespace: media}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`chaptarr.thenewmans.casa`)
+      kind: Rule
+      services: [{name: chaptarr, port: 8789}]
+  tls: {secretName: thenewmans-certs}

@@ -1,0 +1,83 @@
+# Tasterr — self-hosted TMDB/Seerr discovery front-end with per-user taste
+# profiles (https://github.com/ZacharyArthur/tasterr). Single-process
+# Python/uvicorn app, SQLite at /data auto-migrates on boot → tag is PINNED,
+# never :latest (romm/recyclarr lesson); renovate's k8s/media rule already
+# forces manual review on minor+major bumps. Own auth (Seerr accounts / Plex
+# sign-in) → no Authelia middleware, same treatment as seerr/jellyfin.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tasterr
+  namespace: media
+  labels: {app: tasterr}
+spec:
+  replicas: 1 # SQLite single writer — never scale
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: tasterr}}
+  template:
+    metadata:
+      labels: {app: tasterr}
+    spec:
+      # kubelet injects TASTERR_SERVICE_HOST/TASTERR_PORT service-link env for
+      # a Service named "tasterr" and pydantic-settings eats ANY TASTERR_* env
+      # (authelia 2026-09-15 hazard) — kill the injection at the pod level
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 999 # image runs as uid/gid 999 (app); give it the Longhorn vol
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: tasterr
+          image: ghcr.io/zacharyarthur/tasterr:2.3.0
+          ports: [{containerPort: 8000}]
+          env:
+            - {name: TZ, value: America/Chicago}
+            - {name: SEERR_INTERNAL_URL, value: "http://seerr:5055"}
+            - {name: SEERR_EXTERNAL_URL, value: "https://seerr.thenewmans.casa"}
+            # Traefik edge = pods (hostPort, NOT hostNetwork) → backend conns
+            # source from the k3s pod CIDR; needed for Secure cookies + HSTS
+            - {name: TASTERR_FORWARDED_ALLOW_IPS, value: "10.42.0.0/16"}
+            - {name: TMDB_API_KEY, valueFrom: {secretKeyRef: {name: media-env, key: TMDB_API_KEY}}}
+            - {name: SEERR_API_KEY, valueFrom: {secretKeyRef: {name: media-env, key: SEERR_API_KEY}}}
+            - {name: TASTERR_SECRET_KEY, valueFrom: {secretKeyRef: {name: media-env, key: TASTERR_SECRET_KEY}}}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          readinessProbe:
+            httpGet: {path: /api/v1/health, port: 8000}
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          livenessProbe:
+            httpGet: {path: /api/v1/health, port: 8000}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: tasterr-data}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: tasterr-data, namespace: media}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources: {requests: {storage: 1Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: tasterr, namespace: media}
+spec:
+  selector: {app: tasterr}
+  ports: [{port: 8000, targetPort: 8000}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: tasterr, namespace: media}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`tasterr.thenewmans.casa`)
+      kind: Rule
+      services: [{name: tasterr, port: 8000}]
+  tls: {secretName: thenewmans-certs}
