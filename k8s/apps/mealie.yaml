@@ -1,0 +1,130 @@
+# mealie — recipe manager / meal planner / shopping lists (fastapi + vue,
+# https://github.com/mealie-recipes/mealie). Own auth: first visit shows the
+# setup wizard to create the admin (ALLOW_SIGNUP=false after that). Postgres
+# backend per the mealie-db Deployment (zipline pattern). Tag PINNED; mealie
+# runs alembic migrations on boot and renovate is set to manual review.
+# enableServiceLinks off per house rule (apps-ns deployments).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mealie-db
+  namespace: apps
+  labels: {app: mealie-db}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: mealie-db}}
+  template:
+    metadata:
+      labels: {app: mealie-db}
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports: [{containerPort: 5432}]
+          env:
+            - {name: POSTGRES_USER, value: mealie}
+            - {name: POSTGRES_DB, value: mealie}
+            # explicit ref (NOT envFrom): apps-env also carries zipline's
+            # POSTGRES_PASSWORD — envFrom would initialize this DB with the
+            # wrong password
+            - {name: POSTGRES_PASSWORD, valueFrom: {secretKeyRef: {name: apps-env, key: MEALIE_DB_PASSWORD}}}
+          volumeMounts:
+            - {name: pgdata, mountPath: /var/lib/postgresql/data, subPath: pgdata}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          livenessProbe:
+            exec: {command: [pg_isready, -U, mealie]}
+            initialDelaySeconds: 20
+            periodSeconds: 20
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim: {claimName: mealie-pgdata}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mealie
+  namespace: apps
+  labels: {app: mealie}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: mealie}}
+  template:
+    metadata:
+      labels: {app: mealie}
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: mealie
+          image: ghcr.io/mealie-recipes/mealie:v3.28.0
+          ports: [{containerPort: 9000}]
+          env:
+            - {name: TZ, value: America/Chicago}
+            - {name: BASE_URL, value: "https://mealie.thenewmans.casa"}
+            - {name: ALLOW_SIGNUP, value: "false"}
+            - {name: DB_ENGINE, value: postgres}
+            - {name: POSTGRES_SERVER, value: mealie-db}
+            - {name: POSTGRES_PORT, value: "5432"}
+            - {name: POSTGRES_USER, value: mealie}
+            - {name: POSTGRES_DB, value: mealie}
+            - {name: POSTGRES_PASSWORD, valueFrom: {secretKeyRef: {name: apps-env, key: MEALIE_DB_PASSWORD}}}
+            # signing key: deterministic across restarts (app otherwise
+            # persists a generated one in /app/data — env is the sure thing)
+            - {name: SECRET, valueFrom: {secretKeyRef: {name: apps-env, key: MEALIE_SECRET}}}
+          volumeMounts:
+            - {name: data, mountPath: /app/data/}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {memory: 1Gi}
+          readinessProbe:
+            httpGet: {path: /api/app/about, port: 9000} # mealie's own healthcheck target
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: mealie-data}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: mealie-pgdata, namespace: apps}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: mealie-data, namespace: apps}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources: {requests: {storage: 5Gi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: mealie-db, namespace: apps}
+spec:
+  selector: {app: mealie-db}
+  ports: [{port: 5432, targetPort: 5432}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: mealie, namespace: apps}
+spec:
+  selector: {app: mealie}
+  ports: [{port: 9000, targetPort: 9000}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: mealie, namespace: apps}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`mealie.thenewmans.casa`)
+      kind: Rule
+      services: [{name: mealie, port: 9000}]
+  tls: {secretName: thenewmans-certs}

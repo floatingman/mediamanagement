@@ -24,4 +24,5 @@ resources:
   - nextdash.yaml
   - convertx.yaml
   - zipline.yaml
+  - mealie.yaml
   - certificate.yaml

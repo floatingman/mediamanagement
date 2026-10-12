@@ -42,3 +42,18 @@ services:
     ports:
       - "8123:8123"
     restart: unless-stopped
+
+  # Structured-output fixer for the z.ai GLM API: z.ai ignores OpenAI's
+  # response_format json_schema and answers in prose, which breaks Mealie's
+  # AI providers (json_invalid on every .parse() reply). Rewrites those
+  # requests to json_object + schema-in-prompt. Auth forwards verbatim.
+  # Port 8124.
+  zai-gateway:
+    image: python:3.12-slim
+    container_name: zai-gateway
+    command: python /gateway/zai-gateway.py
+    volumes:
+      - ../scripts/zai-gateway.py:/gateway/zai-gateway.py:ro
+    ports:
+      - "8124:8124"
+    restart: unless-stopped

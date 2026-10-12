@@ -46,6 +46,24 @@
       "allowedVersions": "/^8\\./"
     },
     {
+      "description": "tasterr SQLite migrations are one-way per major (v2 doc'd downgrade dance to leave v2) — stay within v2",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/zacharyarthur/tasterr"],
+      "allowedVersions": "/^2\\./"
+    },
+    {
+      "description": "chaptarr is beta — any release can carry a SQLite migration; manual review + verify startup after every bump",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["chaptarr/chaptarr"],
+      "automerge": false
+    },
+    {
+      "description": "mealie runs alembic migrations on boot — manual review + verify wizard/API after every bump",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/mealie-recipes/mealie"],
+      "automerge": false
+    },
+    {
       "description": "*arr apps run DB migrations on major jumps — always manual review",
       "matchFileNames": ["k8s/media/*.yaml"],
       "matchUpdateTypes": ["major", "minor"],
