@@ -1,0 +1,25 @@
+# Cluster DNS workaround for zones the LAN router's resolver (192.168.0.1,
+# upstream for CoreDNS via node resolv.conf) SERVFAILs during DNSSEC
+# handling. All affected zones are UNSIGNED or DNSSEC-broken; every public
+# resolver answers them, and the router itself answers with dig +cdflag.
+#
+# Confirmed victims (each verified: public answers, router SERVFAIL, router
+# answers with +cdflag):
+#   nzbgeek.info            2026-10-12  took out sonarr's only indexer
+#   newshosting.com         2026-10-12  took out sabnzbd's primary news server
+#   tweaknews.eu            2026-10-12  sabnzbd's secondary (newshosting.tweaknews.eu)
+#
+# k3s imports any *.server key from this ConfigMap into the generated
+# Corefile. Remove when the router DNS issue is fixed at the source.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom # k3s-reserved name; mounted at /etc/coredns/custom
+  namespace: kube-system
+data:
+  router-broken-dns.server: |
+    nzbgeek.info:53 newshosting.com:53 tweaknews.eu:53 {
+        errors
+        cache 30
+        forward . 1.1.1.1 8.8.8.8
+    }

@@ -27,4 +27,6 @@ resources:
   - namespace.yaml
   - traefik-external-services.yaml
   - nfs-volumes.yaml
+  # coredns-custom lives in k8s/foundation/coredns/ (needs ns kube-system;
+  # this kustomization forces ns traefik and would overwrite it)
   - cert-manager.yaml

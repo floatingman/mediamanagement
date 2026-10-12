@@ -1,0 +1,10 @@
+# Cluster DNS customization, separate from the main foundation kustomization
+# because that one sets namespace: traefik globally and would overwrite the
+# explicit kube-system namespace this ConfigMap requires (k3s only watches
+# kube-system/coredns-custom). Apply:
+#   kubectl apply -k k8s/foundation/coredns
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kube-system
+resources:
+  - coredns-custom.yaml

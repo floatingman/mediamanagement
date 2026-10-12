@@ -143,6 +143,8 @@ container (both should show ProtonVPN); `ip link show tun0` for MTU.
 | Node NotReady, flannel errors | 8472/udp blocked between nodes | ufw rules (INSTALL.md §2) |
 | Node image crashes citing `Unsupported CPU ... require v2 microarchitecture` | Proxmox CPU type `qemu64`-class lacks x86-64-v2 | Proxmox CPU type `host`, reboot nodes one at a time (etcd quorum) |
 | Pods Pending after mass changes | etcd/controller churn | `kubectl get events --sort-by=.lastTimestamp | tail` |
+| `ls /ratchetmedia` → `Stale file handle` in every consumer pod after a Ratchet reboot (VM mounts fine — systemd remounted) | NFS server restart invalidated all kubelet-held file handles; pods never remount on their own | `kubectl -n media rollout restart deploy/radarr deploy/sonarr deploy/bazarr deploy/sabnzbd deploy/syncthing deploy/titlecardmaker` (kubelet remounts at pod recreate; verified 2026-10-12) |
+| Indexer/news server unreachable ("Resource temporarily unavailable", sabnzbd queue stuck at 0 KB/s in "Downloading") while public resolvers answer | LAN router (192.168.0.1) SERVFAILs unsigned/DNSSEC-broken zones during validation (`dig @router +cdflag` answers); hit nzbgeek.info AND newshosting.com/tweaknews.eu the same day | Add the zone to `k8s/foundation/coredns/coredns-custom.yaml`, apply + restart CoreDNS; root fix is the router's DNS config |
 
 ## 7. Rancher (management VM 192.168.0.22)
 
