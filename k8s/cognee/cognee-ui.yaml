@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: cognee-ui
-          image: cognee/cognee-ui:1.6.2
+          image: cognee/cognee-ui:1.6.5
           ports:
             - containerPort: 3000
           env:
