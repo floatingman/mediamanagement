@@ -40,7 +40,7 @@ spec:
               mountPath: /cognee-storage
       containers:
         - name: api
-          image: cognee/cognee:1.6.2
+          image: cognee/cognee:1.6.5
           ports:
             - name: api-http
               containerPort: 8000
